@@ -1,0 +1,177 @@
+{
+  "corpus_info": {
+    "name": "DFCI Clinical Guidelines Corpus - POC",
+    "version": "1.0",
+    "created_date": "2025-10-10",
+    "purpose": "Synthetic clinical guidelines for Vertex AI Agent POC",
+    "phi_status": "SANITIZED - No PHI, synthetic examples only",
+    "total_documents": 5
+  },
+  "documents": [
+    {
+      "document_id": "OID-HEADACHE-001",
+      "title": "Headache Evaluation and Triage Guideline",
+      "filename": "headache_guideline.txt",
+      "source": "Internal Clinical SOP (Synthetic for POC)",
+      "category": "Neurology",
+      "symptom": "headache",
+      "sections": [
+        "red_flags",
+        "urgent_evaluation",
+        "routine_evaluation",
+        "self_care",
+        "assessment_parameters",
+        "differential_diagnosis"
+      ],
+      "last_updated": "2025-10",
+      "version": "1.0",
+      "clinical_owner": "Primary Care / Neurology",
+      "keywords": [
+        "headache",
+        "migraine",
+        "thunderclap",
+        "vision changes",
+        "neurological symptoms",
+        "triage"
+      ],
+      "citation_format": "OID-HEADACHE-001, Internal Clinical SOP (Synthetic for POC), Section: {section}, Oct 2025",
+      "gcs_path": "gs://my-poc-bucket/guidelines/headache_guideline.txt"
+    },
+    {
+      "document_id": "OID-GI-NAUSEA-002",
+      "title": "Nausea and Vomiting Evaluation Guideline",
+      "filename": "nausea_vomiting_guideline.txt",
+      "source": "Internal Clinical SOP (Synthetic for POC)",
+      "category": "Gastroenterology",
+      "symptom": "nausea",
+      "sections": [
+        "red_flags",
+        "urgent_evaluation",
+        "routine_evaluation",
+        "self_care",
+        "dehydration_assessment",
+        "differential_diagnosis",
+        "special_populations"
+      ],
+      "last_updated": "2025-10",
+      "version": "1.0",
+      "clinical_owner": "Primary Care / GI",
+      "keywords": [
+        "nausea",
+        "vomiting",
+        "dehydration",
+        "gastroenteritis",
+        "hematemesis",
+        "antiemetics"
+      ],
+      "citation_format": "OID-GI-NAUSEA-002, Internal Clinical SOP (Synthetic for POC), Section: {section}, Oct 2025",
+      "gcs_path": "gs://my-poc-bucket/guidelines/nausea_vomiting_guideline.txt"
+    },
+    {
+      "document_id": "OID-NEURO-DIZZY-003",
+      "title": "Dizziness and Vertigo Evaluation Guideline",
+      "filename": "dizziness_vertigo_guideline.txt",
+      "source": "Internal Clinical SOP (Synthetic for POC)",
+      "category": "Neurology",
+      "symptom": "dizziness",
+      "sections": [
+        "red_flags",
+        "stroke_assessment",
+        "urgent_evaluation",
+        "bppv",
+        "differential_diagnosis",
+        "fall_prevention",
+        "medication_review"
+      ],
+      "last_updated": "2025-10",
+      "version": "1.0",
+      "clinical_owner": "Primary Care / Neurology",
+      "keywords": [
+        "dizziness",
+        "vertigo",
+        "BPPV",
+        "stroke",
+        "orthostatic",
+        "vestibular",
+        "falls"
+      ],
+      "citation_format": "OID-NEURO-DIZZY-003, Internal Clinical SOP (Synthetic for POC), Section: {section}, Oct 2025",
+      "gcs_path": "gs://my-poc-bucket/guidelines/dizziness_vertigo_guideline.txt"
+    },
+    {
+      "document_id": "OID-GEN-FATIGUE-004",
+      "title": "Fatigue Evaluation Guideline",
+      "filename": "fatigue_guideline.txt",
+      "source": "Internal Clinical SOP (Synthetic for POC)",
+      "category": "General Medicine",
+      "symptom": "fatigue",
+      "sections": [
+        "red_flags",
+        "urgent_evaluation",
+        "laboratory_workup",
+        "differential_diagnosis",
+        "chronic_fatigue_syndrome",
+        "patient_education",
+        "medication_review"
+      ],
+      "last_updated": "2025-10",
+      "version": "1.0",
+      "clinical_owner": "Primary Care",
+      "keywords": [
+        "fatigue",
+        "exhaustion",
+        "anemia",
+        "thyroid",
+        "depression",
+        "sleep",
+        "chronic fatigue syndrome"
+      ],
+      "citation_format": "OID-GEN-FATIGUE-004, Internal Clinical SOP (Synthetic for POC), Section: {section}, Oct 2025",
+      "gcs_path": "gs://my-poc-bucket/guidelines/fatigue_guideline.txt"
+    },
+    {
+      "document_id": "OID-CARDIO-ORTHO-005",
+      "title": "Orthostatic Hypotension Guideline",
+      "filename": "orthostatic_hypotension_guideline.txt",
+      "source": "Internal Clinical SOP (Synthetic for POC)",
+      "category": "Cardiology",
+      "symptom": "orthostatic_hypotension",
+      "sections": [
+        "definition",
+        "red_flags",
+        "vital_signs",
+        "differential_diagnosis",
+        "management",
+        "medication_review",
+        "special_populations"
+      ],
+      "last_updated": "2025-10",
+      "version": "1.0",
+      "clinical_owner": "Primary Care / Cardiology",
+      "keywords": [
+        "orthostatic hypotension",
+        "dizziness",
+        "syncope",
+        "falls",
+        "autonomic",
+        "blood pressure",
+        "postural"
+      ],
+      "citation_format": "OID-CARDIO-ORTHO-005, Internal Clinical SOP (Synthetic for POC), Section: {section}, Oct 2025",
+      "gcs_path": "gs://my-poc-bucket/guidelines/orthostatic_hypotension_guideline.txt"
+    }
+  ],
+  "usage_instructions": {
+    "citation_in_agent": "When the agent references guideline content, include citation in format: 'According to [title] ([document_id], [source], [date]): [content]'",
+    "example_citation": "According to Headache Evaluation and Triage Guideline (OID-HEADACHE-001, Internal Clinical SOP, Oct 2025): Thunderclap headache requires immediate emergency evaluation.",
+    "search_integration": "Vertex Search will index this content. Agent should return citations with every guideline-based response.",
+    "update_frequency": "Review and update guidelines quarterly or when clinical protocols change"
+  },
+  "compliance_notes": {
+    "phi_status": "All content is synthetic. No real patient data included.",
+    "disclaimer": "These are synthetic guidelines for POC purposes only. Not for clinical use.",
+    "validation": "Clinical guidelines should be validated by medical staff before production use",
+    "regulatory": "HIPAA compliance required before using with real patient data"
+  }
+}
+

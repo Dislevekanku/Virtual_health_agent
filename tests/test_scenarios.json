@@ -1,0 +1,240 @@
+{
+  "test_scenarios": [
+    {
+      "scenario_id": "test_001",
+      "name": "Simple Headache - Low Urgency",
+      "description": "Patient with mild headache, short duration",
+      "expected_triage": "low",
+      "conversation": [
+        {
+          "user": "I have a headache",
+          "expected_intent": "symptom_headache",
+          "agent_should_ask": "duration or severity"
+        },
+        {
+          "user": "It started this morning",
+          "expected_entity": "duration: today",
+          "agent_should_ask": "severity"
+        },
+        {
+          "user": "About a 3 out of 10",
+          "expected_entity": "severity: 3",
+          "agent_should_ask": "additional symptoms or clarifying questions"
+        },
+        {
+          "user": "No other symptoms",
+          "expected_action": "triage_evaluation"
+        }
+      ],
+      "expected_output": {
+        "symptom": "headache",
+        "duration": "today",
+        "severity": 3,
+        "triage": "low",
+        "recommendation": "rest and home care, monitor"
+      }
+    },
+    {
+      "scenario_id": "test_002",
+      "name": "Red Flag Headache - High Urgency",
+      "description": "Patient with severe headache and vision changes",
+      "expected_triage": "high",
+      "conversation": [
+        {
+          "user": "I have a really bad headache and my vision is blurry",
+          "expected_intent": "symptom_headache_redflag",
+          "expected_entities": {
+            "symptom": "headache",
+            "vision_change": "yes"
+          },
+          "agent_should": "immediately escalate to high urgency"
+        }
+      ],
+      "expected_output": {
+        "symptom": "headache",
+        "vision_change": "yes",
+        "triage": "high",
+        "recommendation": "call nurse line or go to emergency department"
+      }
+    },
+    {
+      "scenario_id": "test_003",
+      "name": "Nausea with Vomiting - Medium Urgency",
+      "description": "Patient unable to keep food down",
+      "expected_triage": "medium",
+      "conversation": [
+        {
+          "user": "Feeling nauseous since last night, can't keep food down",
+          "expected_intent": "symptom_nausea",
+          "expected_entities": {
+            "symptom": "nausea",
+            "duration": "1 day",
+            "vomiting": "yes"
+          }
+        },
+        {
+          "user": "The nausea is about a 6",
+          "expected_entity": "severity: 6",
+          "agent_should_ask": "fluids, blood in vomit, other symptoms"
+        },
+        {
+          "user": "I can drink water but nothing stays down",
+          "expected_action": "continue to triage"
+        }
+      ],
+      "expected_output": {
+        "symptom": "nausea",
+        "duration": "1 day",
+        "severity": 6,
+        "vomiting": "yes",
+        "triage": "medium",
+        "recommendation": "same-week visit or telehealth"
+      }
+    },
+    {
+      "scenario_id": "test_004",
+      "name": "Positional Dizziness - Medium Urgency",
+      "description": "Patient with dizziness when standing",
+      "expected_triage": "medium",
+      "conversation": [
+        {
+          "user": "I get dizzy when I stand up quickly",
+          "expected_intent": "symptom_dizziness",
+          "expected_entities": {
+            "symptom": "dizziness",
+            "trigger": "standing"
+          }
+        },
+        {
+          "user": "It's been happening for about 3 days",
+          "expected_entity": "duration: 3 days"
+        },
+        {
+          "user": "Maybe a 5 out of 10",
+          "expected_entity": "severity: 5"
+        },
+        {
+          "user": "No falls yet but I feel unsteady",
+          "expected_entity": "balance_issue: yes"
+        }
+      ],
+      "expected_output": {
+        "symptom": "dizziness",
+        "duration": "3 days",
+        "severity": 5,
+        "trigger": "standing",
+        "triage": "medium",
+        "recommendation": "schedule same-week appointment"
+      }
+    },
+    {
+      "scenario_id": "test_005",
+      "name": "Chronic Fatigue - Medium Urgency",
+      "description": "Patient with persistent fatigue",
+      "expected_triage": "medium",
+      "conversation": [
+        {
+          "user": "Been exhausted for a week even after sleeping",
+          "expected_intent": "symptom_fatigue",
+          "expected_entities": {
+            "symptom": "fatigue",
+            "duration": "7 days"
+          }
+        },
+        {
+          "user": "It's about a 7 - I can barely function",
+          "expected_entity": "severity: 7"
+        },
+        {
+          "user": "No fever but I have some body aches",
+          "expected_entity": "additional_symptoms: body aches"
+        }
+      ],
+      "expected_output": {
+        "symptom": "fatigue",
+        "duration": "7 days",
+        "severity": 7,
+        "additional_symptoms": ["body aches"],
+        "triage": "medium",
+        "recommendation": "schedule appointment for evaluation"
+      }
+    },
+    {
+      "scenario_id": "test_006",
+      "name": "Critical Chest Pain - High Urgency",
+      "description": "Patient with chest pain and associated symptoms",
+      "expected_triage": "high",
+      "conversation": [
+        {
+          "user": "My chest feels tight and I'm lightheaded",
+          "expected_intent": "symptom_redflag",
+          "expected_entities": {
+            "symptom": "chest_pain",
+            "dizziness": "yes",
+            "urgency": "high"
+          },
+          "agent_should": "immediately recommend emergency care"
+        }
+      ],
+      "expected_output": {
+        "symptom": "chest_pain",
+        "dizziness": "yes",
+        "triage": "high",
+        "recommendation": "call 911 or go to emergency department immediately"
+      }
+    },
+    {
+      "scenario_id": "test_007",
+      "name": "Fallback Handling",
+      "description": "Test fallback behavior with unclear inputs",
+      "expected_triage": "n/a",
+      "conversation": [
+        {
+          "user": "I don't feel good",
+          "expected_action": "ask for clarification",
+          "agent_should_ask": "specific symptom"
+        },
+        {
+          "user": "Just not right",
+          "expected_action": "fallback_count++",
+          "agent_should": "ask for one sentence description"
+        },
+        {
+          "user": "My head hurts",
+          "expected_intent": "symptom_headache",
+          "agent_should": "proceed with symptom intake"
+        }
+      ]
+    },
+    {
+      "scenario_id": "test_008",
+      "name": "Multiple Escalation Fallback",
+      "description": "Test escalation after multiple fallback attempts",
+      "expected_triage": "n/a",
+      "conversation": [
+        {
+          "user": "zzzzz",
+          "expected_action": "fallback 1"
+        },
+        {
+          "user": "asdfgh",
+          "expected_action": "fallback 2"
+        },
+        {
+          "user": "qwerty",
+          "expected_action": "escalate to nurse line"
+        }
+      ]
+    }
+  ],
+  "success_criteria": {
+    "intent_recognition_accuracy": ">=80%",
+    "entity_extraction_accuracy": ">=85%",
+    "triage_accuracy": ">=90%",
+    "fallback_handling": "triggers after 2 failed attempts",
+    "red_flag_detection": "100% for critical symptoms",
+    "response_time": "<2 seconds per turn",
+    "user_satisfaction": "target >4/5 in pilot testing"
+  }
+}
+

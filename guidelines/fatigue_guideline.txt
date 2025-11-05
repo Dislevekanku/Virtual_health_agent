@@ -1,0 +1,332 @@
+CLINICAL GUIDELINE: FATIGUE EVALUATION
+======================================
+
+Document ID: OID-GEN-FATIGUE-004
+Source: Internal Clinical SOP (Synthetic for POC)
+Last Updated: October 2025
+Section: General Medicine Symptom Intake
+
+---
+
+1. RED FLAG SYMPTOMS (URGENT EVALUATION)
+----------------------------------------
+
+The following require SAME-DAY or URGENT evaluation:
+
+• Fatigue with chest pain, shortness of breath, or palpitations (cardiac concern)
+• Severe fatigue with confusion or altered mental status
+• Fatigue with fever >101°F (38.3°C) for >3 days
+• Fatigue with significant unintentional weight loss (>10 lbs in 1 month)
+• Fatigue with jaundice (yellowing of skin/eyes)
+• Fatigue with easy bruising or unusual bleeding
+• New severe fatigue in patient with cancer history (concern for recurrence/metastasis)
+• Fatigue with severe weakness (unable to perform ADLs)
+• Fatigue with suicidal ideation (psychiatric emergency)
+
+Action: Same-day appointment or emergency evaluation depending on severity
+
+---
+
+2. URGENT EVALUATION (WITHIN 1 WEEK)
+------------------------------------
+
+Schedule appointment within 7 days for:
+
+• Persistent fatigue >4 weeks without clear cause
+• Fatigue interfering with work or daily activities
+• Fatigue with other systemic symptoms (night sweats, lymph node swelling)
+• Fatigue in patient with chronic illness (diabetes, heart disease, kidney disease)
+• New fatigue with medication changes
+• Fatigue with mood changes (depression, anxiety)
+• Fatigue with sleep disturbances
+• Excessive daytime sleepiness despite adequate sleep
+
+Recommended: In-person visit with laboratory workup
+
+---
+
+3. ROUTINE EVALUATION (WITHIN 2-4 WEEKS)
+----------------------------------------
+
+Schedule routine appointment for:
+
+• Mild to moderate fatigue <4 weeks duration
+• Fatigue with known triggers (stress, poor sleep, overexertion)
+• Chronic fatigue with stable pattern
+• Fatigue improving but not resolved
+• Request for fatigue evaluation during health maintenance
+
+Recommended: Can initiate with telehealth, may need in-person follow-up
+
+---
+
+4. SELF-CARE AND MONITORING
+---------------------------
+
+Appropriate for home management initially:
+
+• Mild fatigue <2 weeks
+• Known cause (recent illness, inadequate sleep, stress)
+• No associated red flags
+• Improving trend
+
+Self-Care Recommendations:
+
+Sleep Hygiene:
+• Aim for 7-9 hours sleep per night
+• Consistent sleep schedule (same bedtime/wake time)
+• Dark, quiet, cool bedroom
+• Avoid screens 1 hour before bed
+• Limit caffeine after 2 PM
+• Avoid alcohol close to bedtime
+
+Nutrition:
+• Balanced diet with adequate protein, fruits, vegetables
+• Stay hydrated (8-10 glasses water/day)
+• Avoid processed foods and excessive sugar
+• Consider iron-rich foods (lean meat, spinach, beans)
+• B12 sources (fish, dairy, fortified cereals)
+
+Activity:
+• Regular moderate exercise (30 minutes most days)
+• Start slowly if deconditioned
+• Balance activity with rest periods
+• Avoid overexertion
+
+Stress Management:
+• Mindfulness or meditation
+• Adequate breaks during work
+• Delegate tasks when possible
+• Seek support from family/friends
+
+When to Follow Up: If fatigue persists >2 weeks, worsens, or new symptoms develop
+
+---
+
+5. CLINICAL ASSESSMENT PARAMETERS
+---------------------------------
+
+Key Questions to Ask:
+1. When did fatigue start? How long? (onset and duration)
+2. Rate fatigue severity 0-10 (severity scale)
+3. Constant or intermittent? (pattern)
+4. What makes it better or worse? (exacerbating/relieving factors)
+5. How does it affect daily activities? (functional impact)
+6. Sleep quality and quantity? (sleep assessment)
+7. Mood changes? Feeling down or anxious? (mental health screening)
+8. Recent stressors or life changes? (psychosocial)
+9. Other symptoms? (fever, weight change, pain, cognitive issues)
+10. Current medications and supplements? (medication review)
+11. Diet and exercise habits? (lifestyle factors)
+12. Alcohol, tobacco, or substance use? (substance assessment)
+
+Functional Assessment:
+• Able to work/attend school?
+• Can complete household tasks?
+• Energy to socialize or enjoy activities?
+• Physical limitations due to fatigue?
+
+Documentation Template:
+- Chief Complaint: Fatigue
+- Duration: [acute <1 month / chronic >1 month]
+- Severity: [0-10 scale]
+- Pattern: [constant/intermittent/worse at certain times]
+- Functional impact: [mild/moderate/severe]
+- Sleep: [hours per night, quality]
+- Associated symptoms: [list]
+- Red flags: [yes/no - specify]
+- PHQ-2 score: [if depression screening done]
+- Triage level: [urgent/routine/self-care]
+
+---
+
+6. DIFFERENTIAL DIAGNOSIS CONSIDERATIONS
+----------------------------------------
+
+Common Causes:
+• Insufficient or poor-quality sleep
+• Depression or anxiety
+• Chronic stress or burnout
+• Anemia (iron deficiency, B12/folate deficiency)
+• Hypothyroidism
+• Diabetes (poorly controlled)
+• Chronic fatigue syndrome (CFS/ME)
+• Fibromyalgia
+• Medication side effects
+
+Serious Causes:
+• Malignancy
+• Heart failure
+• Chronic kidney disease
+• Liver disease
+• Autoimmune disorders (lupus, rheumatoid arthritis)
+• Chronic infections (HIV, hepatitis, Lyme disease)
+• Sleep apnea
+• Adrenal insufficiency
+
+---
+
+7. INITIAL LABORATORY WORKUP
+----------------------------
+
+Consider ordering (based on clinical presentation):
+
+First-Line Tests:
+• Complete Blood Count (CBC) - assess for anemia, infection
+• Comprehensive Metabolic Panel (CMP) - kidney, liver, electrolytes, glucose
+• Thyroid Stimulating Hormone (TSH) - thyroid function
+• Vitamin B12 and folate levels
+• Vitamin D level
+• Hemoglobin A1C (if diabetic or at risk)
+
+Additional Tests (if indicated):
+• Iron studies (ferritin, TIBC, iron saturation) - if anemia present
+• Erythrocyte Sedimentation Rate (ESR) or C-Reactive Protein (CRP) - inflammation
+• Liver function tests - if elevated in CMP
+• HIV test, hepatitis panel - if risk factors
+• Lyme serology - if endemic area or exposure
+• Cortisol level - if adrenal insufficiency suspected
+• Sleep study referral - if sleep apnea suspected
+
+Mental Health Screening:
+• PHQ-9 (depression screening)
+• GAD-7 (anxiety screening)
+
+---
+
+8. MEDICATION AND SUBSTANCE REVIEW
+----------------------------------
+
+Medications That Commonly Cause Fatigue:
+• Beta-blockers
+• Antihistamines (especially first-generation)
+• Antidepressants (some SSRIs)
+• Muscle relaxants
+• Opioid pain medications
+• Benzodiazepines
+• Anticonvulsants
+• Statins (rarely)
+
+Assess:
+• Recent medication changes (within 4-8 weeks)
+• Dose adjustments
+• Over-the-counter medications and supplements
+• Alcohol consumption (excessive use causes fatigue)
+• Caffeine intake (excessive or withdrawal)
+• Recreational drug use
+
+---
+
+9. SPECIAL POPULATIONS
+----------------------
+
+Cancer Patients:
+• Cancer-related fatigue is common
+• May be related to treatment (chemo, radiation)
+• Rule out recurrence or progression
+• Supportive care and energy conservation strategies
+
+Post-Viral Fatigue:
+• Common after COVID-19, EBV, influenza
+• Can persist weeks to months (long COVID)
+• Gradual return to activity
+• Monitor for post-exertional malaise
+
+Elderly:
+• Higher prevalence of chronic conditions
+• Polypharmacy consideration
+• Screen for depression (often underdiagnosed)
+• Assess for deconditioning
+
+Athletes:
+• Consider overtraining syndrome
+• Assess nutrition and hydration
+• Rule out anemia (especially in endurance athletes)
+
+---
+
+10. CHRONIC FATIGUE SYNDROME (CFS/ME)
+------------------------------------
+
+Diagnostic Criteria (simplified):
+• Severe fatigue >6 months
+• Not relieved by rest
+• Post-exertional malaise (symptoms worsen after activity)
+• Unrefreshing sleep
+• Cognitive impairment or orthostatic intolerance
+• No other medical explanation
+
+Management:
+• Graded exercise therapy (controversial - use cautiously)
+• Cognitive behavioral therapy (CBT)
+• Pacing and energy conservation
+• Symptom management
+• Multidisciplinary approach
+
+---
+
+11. PATIENT EDUCATION AND COUNSELING
+------------------------------------
+
+Energy Conservation Strategies:
+• Prioritize activities (do most important tasks when energy is highest)
+• Take regular breaks
+• Delegate or postpone non-essential tasks
+• Use assistive devices if needed
+
+Sleep Education:
+• Importance of sleep hygiene
+• Avoid napping late in day (if nighttime sleep affected)
+• Relaxation techniques before bed
+
+Nutrition:
+• Eat regular meals (avoid skipping)
+• Complex carbohydrates for sustained energy
+• Adequate protein
+• Limit sugar and processed foods
+
+Exercise:
+• Start low, go slow
+• Even 10 minutes walking can help
+• Avoid pushing through severe fatigue
+• Listen to body signals
+
+Mental Health:
+• Fatigue and depression often coexist
+• Seeking mental health support is important
+• Stress reduction techniques
+• Social support and connection
+
+When to Return for Care:
+• Fatigue worsening despite interventions
+• New symptoms develop (especially red flags)
+• Unable to function at work or home
+• Thoughts of self-harm
+
+---
+
+12. FOLLOW-UP PLAN
+------------------
+
+Initial Visit Follow-Up:
+• Review laboratory results (typically 3-5 days)
+• Adjust treatment based on findings
+• Re-evaluate in 2-4 weeks
+
+If No Cause Found:
+• Consider referral to specialist (endocrinology, rheumatology, sleep medicine)
+• Trial of empiric treatment (vitamin D, iron if borderline)
+• Mental health referral if depression/anxiety
+• Reassess lifestyle modifications
+
+Chronic Fatigue Management:
+• Regular follow-up every 3-6 months
+• Monitor for new symptoms or complications
+• Adjust medications as needed
+• Ongoing support and education
+
+---
+
+END OF GUIDELINE
+Citation: "OID-GEN-FATIGUE-004, Internal Clinical SOP (Synthetic for POC), Section: Evaluation & Workup, Oct 2025"
+

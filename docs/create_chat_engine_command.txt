@@ -1,0 +1,7 @@
+# After gcloud alpha component is installed, run this command:
+
+& "C:\Users\dk032\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd" alpha discovery-engine engines create --engine-id=clinical-guidelines-chat-engine --display-name="Clinical Guidelines Chat Engine" --location=global --project=ai-agent-health-assistant --collection-id=default_collection --solution-type=SOLUTION_TYPE_CHAT --data-store-ids=clinical-guidelines-datastore --industry-vertical=GENERIC
+
+# This will create the chat engine (takes 15-30 minutes)
+# Then configure in console with the instructions below
+

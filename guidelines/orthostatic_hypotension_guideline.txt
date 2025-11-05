@@ -1,0 +1,347 @@
+CLINICAL GUIDELINE: ORTHOSTATIC HYPOTENSION
+===========================================
+
+Document ID: OID-CARDIO-ORTHO-005
+Source: Internal Clinical SOP (Synthetic for POC)
+Last Updated: October 2025
+Section: Cardiovascular Symptom Assessment
+
+---
+
+1. DEFINITION
+-------------
+
+Orthostatic hypotension (OH) is defined as:
+• Drop in systolic blood pressure ≥20 mmHg, OR
+• Drop in diastolic blood pressure ≥10 mmHg
+• Within 3 minutes of standing from supine or sitting position
+
+Clinical Significance: Increases risk of falls, syncope, cardiovascular events, and mortality
+
+---
+
+2. RED FLAG SYMPTOMS (IMMEDIATE EVALUATION)
+-------------------------------------------
+
+The following require URGENT evaluation:
+
+• Syncope (loss of consciousness) with standing
+• Near-syncope with chest pain or palpitations (cardiac concern)
+• Orthostatic symptoms with neurological deficits (stroke concern)
+• Severe orthostatic symptoms in setting of:
+  - GI bleeding (melena, hematemesis)
+  - Severe dehydration
+  - Acute illness with fever
+  - Recent medication change (especially antihypertensives)
+• Falls resulting in injury
+• Orthostatic symptoms with inability to safely ambulate
+
+Action: Same-day evaluation or emergency department if syncope/injury
+
+---
+
+3. URGENT EVALUATION (WITHIN 24-48 HOURS)
+-----------------------------------------
+
+Schedule urgent appointment for:
+
+• New onset orthostatic symptoms
+• Orthostatic symptoms in diabetic patient (autonomic neuropathy)
+• Symptoms with medication changes (diuretics, antihypertensives)
+• Recurrent near-syncope episodes
+• Orthostatic symptoms in elderly (high fall risk)
+• Symptoms interfering with daily activities
+• Orthostatic symptoms in patient with Parkinson's or autonomic disorders
+
+Recommended: In-person visit with orthostatic vital signs
+
+---
+
+4. CLINICAL ASSESSMENT
+----------------------
+
+Orthostatic Vital Sign Measurement:
+1. Patient supine for 5 minutes → measure BP and HR
+2. Patient stands → measure BP and HR at 1 minute and 3 minutes
+3. Document symptoms at each position
+
+Positive Findings:
+• BP drop ≥20/10 mmHg (diagnostic)
+• HR increase ≥30 bpm (suggests volume depletion or POTS)
+• Reproduction of symptoms with standing
+
+Symptoms to Assess:
+• Lightheadedness or dizziness with standing
+• Vision changes (blurring, tunnel vision, blackout)
+• Weakness or fatigue
+• Cognitive slowing or confusion
+• Nausea
+• Palpitations
+• Neck or shoulder discomfort ("coat hanger" pain)
+
+Key Questions:
+1. When do symptoms occur? (immediately upon standing vs delayed)
+2. How long do symptoms last? (seconds to minutes)
+3. What relieves symptoms? (sitting/lying down, leg crossing)
+4. Any loss of consciousness?
+5. Time of day worse? (morning often worse - nocturnal hypertension)
+6. Recent illness, vomiting, diarrhea? (volume depletion)
+7. Medication changes?
+8. Dietary changes? Salt intake?
+
+---
+
+5. DIFFERENTIAL DIAGNOSIS
+-------------------------
+
+Volume Depletion (most common):
+• Dehydration
+• Blood loss
+• Diuretic use
+• Vomiting/diarrhea
+• Inadequate fluid intake
+
+Autonomic Dysfunction:
+• Diabetic autonomic neuropathy
+• Parkinson's disease
+• Multiple system atrophy
+• Pure autonomic failure
+• Amyloidosis
+
+Cardiovascular:
+• Heart failure
+• Arrhythmia
+• Valvular disease (aortic stenosis)
+• Cardiomyopathy
+
+Medications:
+• Antihypertensives (ACE-I, ARBs, beta-blockers, alpha-blockers)
+• Diuretics
+• Nitrates
+• Tricyclic antidepressants
+• Antipsychotics
+• Levodopa (Parkinson's treatment)
+• Alcohol
+
+Other:
+• Prolonged bed rest/deconditioning
+• Anemia
+• Adrenal insufficiency
+• Postural Orthostatic Tachycardia Syndrome (POTS)
+
+---
+
+6. DIAGNOSTIC WORKUP
+--------------------
+
+Initial Laboratory Tests:
+• Complete Blood Count (CBC) - assess for anemia
+• Basic Metabolic Panel (BMP) - electrolytes, kidney function
+• Blood glucose - rule out hypoglycemia
+• Hemoglobin A1C - assess diabetic control if applicable
+• ECG - rule out arrhythmia or cardiac abnormality
+
+Additional Tests (if indicated):
+• Supine and standing plasma norepinephrine - autonomic testing
+• Tilt table test - if diagnosis unclear
+• Echocardiogram - if structural heart disease suspected
+• 24-hour ambulatory BP monitoring - assess for nocturnal hypertension
+• Autonomic function tests - if autonomic disorder suspected
+• Cortisol level (AM) - if adrenal insufficiency suspected
+
+---
+
+7. MANAGEMENT STRATEGIES
+------------------------
+
+Non-Pharmacological (First-Line):
+
+Fluid and Salt Intake:
+• Increase fluid intake: 2-3 liters/day
+• Increase salt intake: 6-10 grams/day (if no contraindication)
+• Salt tablets if unable to increase dietary salt
+
+Physical Countermaneuvers:
+• Leg crossing with muscle tensing
+• Squatting
+• Muscle tensing (buttocks, thighs, arms)
+• Avoid prolonged standing
+
+Positional Strategies:
+• Rise slowly from supine to sitting to standing
+• Sit on edge of bed for 1 minute before standing
+• Elevate head of bed 10-20 degrees at night (reduces nocturnal diuresis)
+• Avoid hot showers/baths (vasodilation)
+
+Compression Garments:
+• Waist-high compression stockings (30-40 mmHg)
+• Abdominal binder
+
+Lifestyle Modifications:
+• Small, frequent meals (avoid large meals → postprandial hypotension)
+• Avoid alcohol (vasodilation)
+• Adequate sleep
+• Regular exercise (swimming, recumbent biking - avoid deconditioning)
+
+Pharmacological (if non-pharm fails):
+
+Fludrocortisone (Florinef):
+• Mineralocorticoid - increases sodium retention
+• Dose: 0.1-0.2 mg daily
+• Monitor: BP, potassium, edema
+• Contraindication: heart failure
+
+Midodrine:
+• Alpha-1 agonist - peripheral vasoconstriction
+• Dose: 2.5-10 mg three times daily (last dose before 4 PM)
+• Monitor: BP (avoid supine hypertension)
+• Contraindication: severe heart disease, urinary retention
+
+Droxidopa:
+• Norepinephrine precursor
+• Dose: 100-600 mg three times daily
+• For neurogenic orthostatic hypotension
+
+Other Options:
+• Pyridostigmine - acetylcholinesterase inhibitor
+• Desmopressin (DDAVP) - for nocturnal polyuria
+• Erythropoietin - if anemic
+
+---
+
+8. MEDICATION REVIEW AND ADJUSTMENT
+-----------------------------------
+
+Assess Current Medications:
+
+High-Risk Medications to Review:
+• Diuretics - consider dose reduction or timing change (morning only)
+• Antihypertensives - may need to decrease dose or discontinue
+• Alpha-blockers (tamsulosin for BPH) - consider alternatives
+• Tricyclic antidepressants - switch to SSRI if possible
+• Nitrates - reduce dose if possible
+• Levodopa - time doses, use controlled-release formulation
+
+Strategies:
+• Reduce or eliminate offending medications when possible
+• Time medications to minimize orthostatic effect
+• Use shorter-acting agents
+• Avoid polypharmacy
+
+---
+
+9. SPECIAL POPULATIONS
+----------------------
+
+Elderly:
+• Higher prevalence of OH (20-30% of older adults)
+• Increased fall risk → fractures, head injury
+• Often multifactorial (medications, deconditioning, autonomic dysfunction)
+• Lower threshold for intervention
+• Home safety assessment important
+
+Diabetic Patients:
+• Screen for autonomic neuropathy (especially if diabetes >10 years)
+• Optimize glycemic control
+• May need earlier pharmacological intervention
+• Higher risk of complications
+
+Parkinson's Disease:
+• OH present in 30-50% of patients
+• Related to disease and/or medications (levodopa)
+• Adjust PD medications timing and dosing
+• Droxidopa may be particularly helpful
+
+Heart Failure Patients:
+• Challenge: need diuretics but causes OH
+• Balance volume status carefully
+• Avoid fludrocortisone (worsens volume overload)
+• Monitor closely
+
+---
+
+10. PATIENT EDUCATION
+--------------------
+
+Warning Signs:
+• Symptoms when standing (dizziness, lightheadedness, vision changes)
+• If symptoms occur, sit or lie down immediately
+• Don't ignore warning signs - prevents falls
+
+Safety Measures:
+• Remove fall hazards (rugs, clutter)
+• Install grab bars in bathroom
+• Use night lights
+• Avoid sudden position changes
+• Avoid hot environments (sauna, hot tub)
+• Stay hydrated, especially in hot weather
+
+Hydration and Salt:
+• Drink 8-10 glasses water daily
+• Add salt to food (if permitted)
+• Avoid caffeine in excess (mild diuretic)
+• Oral rehydration solution if exercising
+
+When to Seek Care:
+• Syncope (loss of consciousness)
+• Fall with injury
+• New or worsening symptoms
+• Symptoms despite treatment
+
+---
+
+11. FOLLOW-UP PLAN
+------------------
+
+Initial Follow-Up:
+• Re-check orthostatic vital signs in 1-2 weeks
+• Assess response to non-pharmacological interventions
+• Review medication adjustments
+
+If Starting Pharmacotherapy:
+• Monitor supine and standing BP weekly initially
+• Assess for side effects (edema, hypokalemia with fludrocortisone)
+• Titrate dose based on symptoms and BP response
+
+Long-Term Management:
+• Regular follow-up every 3-6 months
+• Annual comprehensive medication review
+• Screen for complications (falls, syncope)
+• Adjust therapy as needed
+
+Goals of Treatment:
+• Reduce symptoms
+• Prevent falls and syncope
+• Maintain functional independence
+• Minimize supine hypertension
+
+---
+
+12. DOCUMENTATION TEMPLATE
+--------------------------
+
+Assessment:
+- Orthostatic vital signs:
+  • Supine: BP ___ / ___ HR ___
+  • Standing 1 min: BP ___ / ___ HR ___
+  • Standing 3 min: BP ___ / ___ HR ___
+  • Symptoms with standing: Yes/No - describe
+- Fall history: Yes/No
+- Syncope history: Yes/No
+- Current medications reviewed: Yes
+- Red flags: Yes/No - specify
+
+Plan:
+- Non-pharmacological interventions: [list]
+- Medication adjustments: [specify]
+- Pharmacological treatment: [if indicated]
+- Labs ordered: [if applicable]
+- Follow-up: [timeframe]
+- Safety counseling provided: Yes
+- Fall risk assessment completed: Yes
+
+---
+
+END OF GUIDELINE
+Citation: "OID-CARDIO-ORTHO-005, Internal Clinical SOP (Synthetic for POC), Section: Assessment & Management, Oct 2025"
+

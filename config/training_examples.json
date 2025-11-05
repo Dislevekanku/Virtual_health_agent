@@ -1,0 +1,234 @@
+{
+  "intents": [
+    {
+      "displayName": "symptom_headache",
+      "description": "User reports headache symptoms",
+      "trainingPhrases": [
+        {
+          "parts": [{"text": "I've had a headache for two days and nothing I've taken helps"}],
+          "entities": {
+            "symptom": "headache",
+            "duration": "2 days",
+            "severity": "unknown"
+          }
+        },
+        {
+          "parts": [{"text": "My head hurts really bad"}],
+          "entities": {
+            "symptom": "headache",
+            "severity": "severe"
+          }
+        },
+        {
+          "parts": [{"text": "I have a mild headache"}],
+          "entities": {
+            "symptom": "headache",
+            "severity": "mild"
+          }
+        },
+        {
+          "parts": [{"text": "Headache started this morning"}],
+          "entities": {
+            "symptom": "headache",
+            "duration": "today"
+          }
+        },
+        {
+          "parts": [{"text": "I've been having headaches for a week"}],
+          "entities": {
+            "symptom": "headache",
+            "duration": "7 days"
+          }
+        }
+      ]
+    },
+    {
+      "displayName": "symptom_headache_redflag",
+      "description": "Headache with red flag symptoms requiring urgent care",
+      "trainingPhrases": [
+        {
+          "parts": [{"text": "I have a really bad headache and my vision is blurry"}],
+          "entities": {
+            "symptom": "headache",
+            "vision_change": "yes",
+            "urgency": "high"
+          }
+        },
+        {
+          "parts": [{"text": "Severe headache with confusion"}],
+          "entities": {
+            "symptom": "headache",
+            "mental_status_change": "yes",
+            "urgency": "high"
+          }
+        },
+        {
+          "parts": [{"text": "Worst headache of my life"}],
+          "entities": {
+            "symptom": "headache",
+            "severity": "worst_ever",
+            "urgency": "high"
+          }
+        },
+        {
+          "parts": [{"text": "Headache with stiff neck and fever"}],
+          "entities": {
+            "symptom": "headache",
+            "stiff_neck": "yes",
+            "fever": "yes",
+            "urgency": "high"
+          }
+        }
+      ]
+    },
+    {
+      "displayName": "symptom_nausea",
+      "description": "User reports nausea or vomiting",
+      "trainingPhrases": [
+        {
+          "parts": [{"text": "Feeling nauseous since last night, can't keep food down"}],
+          "entities": {
+            "symptom": "nausea",
+            "duration": "1 day",
+            "vomiting": "yes"
+          }
+        },
+        {
+          "parts": [{"text": "I have mild nausea but no vomiting"}],
+          "entities": {
+            "symptom": "nausea",
+            "severity": "mild",
+            "vomiting": "no"
+          }
+        },
+        {
+          "parts": [{"text": "I feel sick to my stomach"}],
+          "entities": {
+            "symptom": "nausea"
+          }
+        },
+        {
+          "parts": [{"text": "Been throwing up all morning"}],
+          "entities": {
+            "symptom": "nausea",
+            "vomiting": "yes",
+            "duration": "today"
+          }
+        },
+        {
+          "parts": [{"text": "Nausea for 3 days"}],
+          "entities": {
+            "symptom": "nausea",
+            "duration": "3 days"
+          }
+        }
+      ]
+    },
+    {
+      "displayName": "symptom_dizziness",
+      "description": "User reports dizziness or vertigo",
+      "trainingPhrases": [
+        {
+          "parts": [{"text": "I get dizzy when I stand up quickly"}],
+          "entities": {
+            "symptom": "dizziness",
+            "trigger": "standing",
+            "severity": "moderate"
+          }
+        },
+        {
+          "parts": [{"text": "Feeling lightheaded"}],
+          "entities": {
+            "symptom": "dizziness",
+            "severity": "mild"
+          }
+        },
+        {
+          "parts": [{"text": "The room is spinning"}],
+          "entities": {
+            "symptom": "vertigo",
+            "severity": "severe"
+          }
+        },
+        {
+          "parts": [{"text": "I feel dizzy and unsteady"}],
+          "entities": {
+            "symptom": "dizziness",
+            "balance_issue": "yes"
+          }
+        }
+      ]
+    },
+    {
+      "displayName": "symptom_fatigue",
+      "description": "User reports fatigue or exhaustion",
+      "trainingPhrases": [
+        {
+          "parts": [{"text": "Been exhausted for a week even after sleeping"}],
+          "entities": {
+            "symptom": "fatigue",
+            "duration": "7 days"
+          }
+        },
+        {
+          "parts": [{"text": "I'm so tired all the time"}],
+          "entities": {
+            "symptom": "fatigue"
+          }
+        },
+        {
+          "parts": [{"text": "No energy for days"}],
+          "entities": {
+            "symptom": "fatigue",
+            "duration": "multiple days"
+          }
+        },
+        {
+          "parts": [{"text": "Completely drained"}],
+          "entities": {
+            "symptom": "fatigue",
+            "severity": "severe"
+          }
+        }
+      ]
+    },
+    {
+      "displayName": "symptom_redflag",
+      "description": "Critical red flag symptoms requiring immediate care",
+      "trainingPhrases": [
+        {
+          "parts": [{"text": "My chest feels tight and I'm lightheaded"}],
+          "entities": {
+            "symptom": "chest_pain",
+            "dizziness": "yes",
+            "urgency": "high"
+          }
+        },
+        {
+          "parts": [{"text": "Chest pain and shortness of breath"}],
+          "entities": {
+            "symptom": "chest_pain",
+            "breathing_difficulty": "yes",
+            "urgency": "high"
+          }
+        },
+        {
+          "parts": [{"text": "I can't breathe properly"}],
+          "entities": {
+            "symptom": "breathing_difficulty",
+            "urgency": "high"
+          }
+        },
+        {
+          "parts": [{"text": "Severe abdominal pain"}],
+          "entities": {
+            "symptom": "abdominal_pain",
+            "severity": "severe",
+            "urgency": "high"
+          }
+        }
+      ]
+    }
+  ]
+}
+

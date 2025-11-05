@@ -1,0 +1,237 @@
+================================================================================
+QUICK COMMAND REFERENCE - Clinical Guidelines Corpus Setup
+================================================================================
+
+PROJECT: DFCI Virtual Health Assistant POC
+DATE: October 2025
+STATUS: Ready for GCS Upload
+
+================================================================================
+STEP 1: SET UP CREDENTIALS (Windows PowerShell)
+================================================================================
+
+# Set environment variable
+$env:GOOGLE_APPLICATION_CREDENTIALS=".\key.json"
+
+# Verify it's set
+echo $env:GOOGLE_APPLICATION_CREDENTIALS
+
+================================================================================
+STEP 2: CREATE GCS BUCKET (Choose one method)
+================================================================================
+
+# Method A: Using gcloud
+gcloud storage buckets create gs://dfci-guidelines-poc --location=us-central1 --project=ai-agent-health-assistant
+
+# Method B: Using gsutil
+gsutil mb -c standard -l us-central1 gs://dfci-guidelines-poc
+
+# Method C: Using Python script
+python upload_to_gcs.py --bucket dfci-guidelines-poc --create-bucket --project-id ai-agent-health-assistant
+
+# Method D: Via Console
+# Go to: https://console.cloud.google.com/storage/create-bucket?project=ai-agent-health-assistant
+# Name: dfci-guidelines-poc
+# Location: us-central1
+# Click Create
+
+================================================================================
+STEP 3: UPLOAD GUIDELINES TO GCS
+================================================================================
+
+# Upload all files with verification
+python upload_to_gcs.py --bucket dfci-guidelines-poc --verify
+
+# Upload without verification (faster)
+python upload_to_gcs.py --bucket dfci-guidelines-poc
+
+================================================================================
+STEP 4: VERIFY UPLOAD
+================================================================================
+
+# List bucket contents using Python script
+python upload_to_gcs.py --bucket dfci-guidelines-poc --list
+
+# Or using gsutil
+gsutil ls -r gs://dfci-guidelines-poc/guidelines/
+
+# Expected output:
+# gs://dfci-guidelines-poc/guidelines/headache_guideline.txt
+# gs://dfci-guidelines-poc/guidelines/nausea_vomiting_guideline.txt
+# gs://dfci-guidelines-poc/guidelines/dizziness_vertigo_guideline.txt
+# gs://dfci-guidelines-poc/guidelines/fatigue_guideline.txt
+# gs://dfci-guidelines-poc/guidelines/orthostatic_hypotension_guideline.txt
+# gs://dfci-guidelines-poc/guidelines/guidelines_metadata.json
+
+================================================================================
+STEP 5: CREATE VERTEX AI SEARCH DATASTORE
+================================================================================
+
+# Go to Vertex AI Search Console
+https://console.cloud.google.com/gen-app-builder/engines?project=ai-agent-health-assistant
+
+# Steps:
+# 1. Click "Create App" → Select "Search"
+# 2. App name: "Clinical Guidelines Search"
+# 3. Create Datastore → "Unstructured documents"
+# 4. Datastore name: "clinical-guidelines-datastore"
+# 5. Import from: "Cloud Storage"
+# 6. GCS path: gs://dfci-guidelines-poc/guidelines/*.txt
+# 7. Wait for import (~5-10 minutes)
+
+================================================================================
+STEP 6: CONNECT TO DIALOGFLOW CX AGENT
+================================================================================
+
+# Open your agent
+https://dialogflow.cloud.google.com/cx/projects/ai-agent-health-assistant/locations/us-central1/agents/72d18125-ac71-4c56-8ea0-44bfc7f9b039
+
+# Steps:
+# 1. Go to "Manage" → "Agent Settings"
+# 2. Click "Generative AI" tab
+# 3. Click "+ Add Data Store"
+# 4. Select "clinical-guidelines-datastore"
+# 5. Enable "Citations" checkbox
+# 6. Enable "Grounding" checkbox
+# 7. Model: "gemini-1.5-flash" (recommended)
+# 8. Temperature: 0.2 (low for clinical accuracy)
+# 9. Click "Save"
+
+================================================================================
+STEP 7: TEST YOUR SETUP
+================================================================================
+
+# Open Test Agent (top right corner of Dialogflow CX)
+# Or go to:
+https://dialogflow.cloud.google.com/cx/projects/ai-agent-health-assistant/locations/us-central1/agents/72d18125-ac71-4c56-8ea0-44bfc7f9b039/test
+
+# Test Query 1: Red Flags
+User: What are red flag headache symptoms?
+Expected: Should cite OID-HEADACHE-001 with red flag symptoms
+
+# Test Query 2: Triage
+User: I have a mild headache, 3 out of 10
+Expected: Self-care recommendations + safety net advice
+
+# Test Query 3: Complex
+User: I feel dizzy when I stand up
+Expected: Orthostatic hypotension info + cite OID-CARDIO-ORTHO-005
+
+================================================================================
+USEFUL COMMANDS
+================================================================================
+
+# View bucket in console
+https://console.cloud.google.com/storage/browser/dfci-guidelines-poc
+
+# Download a file from bucket
+gsutil cp gs://dfci-guidelines-poc/guidelines/headache_guideline.txt .
+
+# Delete a file from bucket (if needed)
+gsutil rm gs://dfci-guidelines-poc/guidelines/filename.txt
+
+# Re-upload single file
+gsutil cp guidelines/headache_guideline.txt gs://dfci-guidelines-poc/guidelines/
+
+# Check service account permissions
+gcloud projects get-iam-policy ai-agent-health-assistant --flatten="bindings[].members" --filter="bindings.members:agent-builder-sa@ai-agent-health-assistant.iam.gserviceaccount.com"
+
+# Activate virtual environment (if needed)
+.\venv\Scripts\Activate.ps1
+
+# Install/update requirements
+pip install -r requirements.txt
+
+================================================================================
+FILES CREATED
+================================================================================
+
+Clinical Guidelines (in /guidelines):
+  - headache_guideline.txt (8 KB)
+  - nausea_vomiting_guideline.txt (7 KB)
+  - dizziness_vertigo_guideline.txt (9 KB)
+  - fatigue_guideline.txt (10 KB)
+  - orthostatic_hypotension_guideline.txt (8 KB)
+
+Metadata & Scripts:
+  - guidelines_metadata.json (structured metadata for all guidelines)
+  - upload_to_gcs.py (upload automation script)
+
+Documentation:
+  - CORPUS_SETUP_GUIDE.md (complete setup instructions)
+  - KNOWLEDGE_BASE_SUMMARY.md (overview and reference)
+  - guidelines/QUICK_REFERENCE.md (clinical quick lookup)
+  - guidelines/EXAMPLE_SCENARIOS.md (15 test scenarios)
+  - QUICK_COMMANDS.txt (this file)
+
+Updated:
+  - requirements.txt (added google-cloud-storage)
+  - .gitignore (protect key.json)
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Problem: "Bucket not found"
+Solution: Create bucket first (see Step 2 above)
+
+Problem: "Permission denied"
+Solution: Check GOOGLE_APPLICATION_CREDENTIALS is set correctly
+
+Problem: "Module not found: google.cloud.storage"
+Solution: pip install google-cloud-storage
+
+Problem: Agent not returning guidelines
+Solution: 
+  1. Check datastore import status (should be "Complete")
+  2. Verify datastore is connected to agent
+  3. Test search directly in Vertex AI Search console
+
+Problem: Citations not showing
+Solution: Enable citations in Agent Settings → Generative AI → Citations ✓
+
+================================================================================
+DOCUMENTATION REFERENCE
+================================================================================
+
+Quick Start:           KNOWLEDGE_BASE_SUMMARY.md
+Detailed Setup:        CORPUS_SETUP_GUIDE.md
+Clinical Reference:    guidelines/QUICK_REFERENCE.md
+Test Scenarios:        guidelines/EXAMPLE_SCENARIOS.md
+Agent Setup:           FINAL_SETUP_STEPS.md
+Project Overview:      PROJECT_SUMMARY.md
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+☐ Step 1: Set credentials (GOOGLE_APPLICATION_CREDENTIALS)
+☐ Step 2: Create GCS bucket (dfci-guidelines-poc)
+☐ Step 3: Upload guidelines (python upload_to_gcs.py)
+☐ Step 4: Create Vertex AI Search datastore
+☐ Step 5: Connect to Dialogflow CX agent
+☐ Step 6: Test with example scenarios
+☐ Step 7: Refine and expand as needed
+
+================================================================================
+SUPPORT
+================================================================================
+
+Documentation:   See files above
+GCP Console:     https://console.cloud.google.com/?project=ai-agent-health-assistant
+Dialogflow CX:   https://dialogflow.cloud.google.com/cx
+Vertex Search:   https://console.cloud.google.com/gen-app-builder
+
+Project ID:      ai-agent-health-assistant
+Location:        us-central1
+Bucket:          gs://dfci-guidelines-poc
+
+================================================================================
+STATUS: ✅ READY FOR DEPLOYMENT
+================================================================================
+
+All files created. Follow steps 1-7 above to complete setup.
+Estimated time: 20-30 minutes
+
+================================================================================
+

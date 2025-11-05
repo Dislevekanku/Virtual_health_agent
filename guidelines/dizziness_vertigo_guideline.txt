@@ -1,0 +1,257 @@
+CLINICAL GUIDELINE: DIZZINESS AND VERTIGO EVALUATION
+===================================================
+
+Document ID: OID-NEURO-DIZZY-003
+Source: Internal Clinical SOP (Synthetic for POC)
+Last Updated: October 2025
+Section: Neurological Symptom Intake
+
+---
+
+1. RED FLAG SYMPTOMS (IMMEDIATE EVALUATION)
+-------------------------------------------
+
+The following require EMERGENCY evaluation (911 or ED):
+
+• Dizziness with chest pain or shortness of breath (cardiac concern)
+• Dizziness with severe headache (concern for stroke/hemorrhage)
+• Dizziness with focal neurological symptoms:
+  - Weakness or numbness (especially one-sided)
+  - Difficulty speaking or slurred speech
+  - Vision changes (double vision, vision loss)
+  - Facial drooping
+  - Difficulty walking or loss of coordination
+• Dizziness with loss of consciousness or near-syncope
+• Dizziness after head trauma
+• Sudden onset severe vertigo with inability to walk
+• Vertigo with hearing loss (sudden) - concern for stroke
+
+STROKE ASSESSMENT: Use BE-FAST
+- Balance loss
+- Eyesight changes
+- Face drooping
+- Arm weakness
+- Speech difficulty
+- Time to call 911
+
+Action: Call 911 immediately - do not drive patient to hospital
+
+---
+
+2. URGENT EVALUATION (SAME-DAY)
+-------------------------------
+
+Schedule urgent same-day appointment for:
+
+• New onset dizziness with vomiting
+• Positional dizziness with severe nausea
+• Dizziness in diabetic patient (check blood sugar)
+• Orthostatic dizziness (standing) with near-syncope
+• Dizziness with palpitations or irregular heartbeat
+• Persistent vertigo >24 hours
+• Dizziness with fever
+• New dizziness in patient >65 years old
+• Dizziness with medication changes (especially BP meds)
+
+Recommended: In-person visit for examination (gait, blood pressure, neurological exam)
+
+---
+
+3. ROUTINE EVALUATION (WITHIN 1 WEEK)
+-------------------------------------
+
+Schedule routine appointment for:
+
+• Mild intermittent dizziness
+• Known benign positional vertigo (recurrent episode)
+• Lightheadedness without syncope
+• Dizziness duration 3-7 days, improving
+• Mild imbalance without falls
+
+Recommended: Can be telehealth initial visit, may need in-person follow-up
+
+---
+
+4. SELF-CARE AND MONITORING
+---------------------------
+
+Appropriate for home management:
+
+• Mild dizziness or lightheadedness
+• Duration <48 hours
+• No associated red flags
+• Likely dehydration or viral illness
+• Known triggers (dehydration, hunger, fatigue)
+
+Self-Care Recommendations:
+• Hydration: 8-10 glasses water/day
+• Avoid sudden position changes (stand slowly from sitting/lying)
+• Adequate nutrition (avoid prolonged fasting)
+• Avoid driving or operating machinery while dizzy
+• Remove fall hazards at home
+• Use assistive devices (cane, walker) if needed
+• Epley maneuver for known BPPV (if trained)
+
+Safety Measures:
+• Sit or lie down immediately if feeling dizzy
+• Call for help if unable to stand safely
+• Keep phone accessible
+• Avoid heights or stairs when dizzy
+
+When to Follow Up: If dizziness persists >3 days, worsens, or new symptoms develop
+
+---
+
+5. CLINICAL ASSESSMENT PARAMETERS
+---------------------------------
+
+Key Questions to Ask:
+1. Can you describe the dizziness? (type: spinning vs lightheadedness vs imbalance)
+2. When did it start? (onset: sudden vs gradual)
+3. How long does each episode last? (duration: seconds vs minutes vs hours)
+4. What triggers it? (positional, standing, head movement)
+5. Any associated symptoms? (hearing changes, tinnitus, nausea, headache)
+6. Have you fallen or nearly fallen? (fall risk)
+7. Any recent illness or ear infection? (vestibular neuritis)
+8. Current medications? Recent changes? (medication-induced)
+9. History of migraines? (vestibular migraine)
+
+Types of Dizziness:
+• VERTIGO: Spinning sensation, room moving
+• PRESYNCOPE: Lightheadedness, feeling faint
+• DISEQUILIBRIUM: Off-balance, unsteady gait
+• NONSPECIFIC: Vague, "woozy," floating
+
+Documentation Template:
+- Chief Complaint: Dizziness/Vertigo
+- Type: [vertigo/presyncope/disequilibrium/nonspecific]
+- Onset: [sudden/gradual]
+- Duration: [seconds/minutes/hours/constant]
+- Triggers: [positional/standing/movement/none]
+- Associated symptoms: [hearing loss/tinnitus/nausea/neurological]
+- Fall history: [yes/no - details if yes]
+- Red flags: [yes/no - specify]
+- Orthostatic vital signs: [if available]
+- Triage level: [high/medium/low]
+
+---
+
+6. DIFFERENTIAL DIAGNOSIS CONSIDERATIONS
+----------------------------------------
+
+Peripheral Vestibular (Inner Ear):
+• Benign Paroxysmal Positional Vertigo (BPPV) - most common
+• Vestibular neuritis/labyrinthitis
+• Ménière's disease (vertigo + hearing loss + tinnitus)
+• Acoustic neuroma
+
+Central Vestibular (Brain):
+• Stroke or TIA
+• Vestibular migraine
+• Multiple sclerosis
+• Cerebellar disorders
+
+Cardiovascular:
+• Orthostatic hypotension
+• Arrhythmia
+• Vasovagal syncope
+• Cardiac disease
+
+Other:
+• Medication side effects
+• Dehydration
+• Hypoglycemia
+• Anxiety/panic disorder
+• Cervical vertigo
+
+---
+
+7. POSITIONAL TESTING (BPPV)
+----------------------------
+
+Dix-Hallpike Test:
+• Sudden head movement to lying position
+• Positive: Nystagmus and vertigo with specific head position
+• Suggests BPPV (benign positional vertigo)
+
+Orthostatic Vital Signs:
+• Blood pressure and heart rate sitting and standing (after 1-3 minutes)
+• Positive: BP drop >20 systolic or >10 diastolic, or HR increase >30
+• Suggests orthostatic hypotension
+
+---
+
+8. MEDICATION REVIEW
+--------------------
+
+Medications That May Cause Dizziness:
+• Antihypertensives (especially when starting or dose increased)
+• Diuretics (dehydration, electrolyte imbalance)
+• Sedatives/hypnotics
+• Antidepressants
+• Anticonvulsants
+• Aminoglycoside antibiotics (ototoxic)
+• NSAIDs (in high doses)
+
+Assess:
+• Recent medication changes (within 2 weeks)
+• Compliance (missing doses can cause rebound hypertension)
+• Drug interactions
+
+---
+
+9. SPECIAL POPULATIONS
+----------------------
+
+Elderly (>65 years):
+• Higher risk of falls and injury
+• Lower threshold for in-person evaluation
+• Consider polypharmacy
+• Assess home safety
+
+Diabetic Patients:
+• Check blood glucose immediately
+• Consider autonomic neuropathy (orthostatic hypotension)
+
+Cardiac History:
+• Consider arrhythmia
+• May need telemetry or Holter monitor
+• ECG indicated
+
+Migraine History:
+• Vestibular migraine common
+• May have vertigo without headache
+• Triggers similar to typical migraine
+
+---
+
+10. PATIENT EDUCATION
+--------------------
+
+BPPV (Benign Positional Vertigo):
+• Most common cause of vertigo
+• Not dangerous but uncomfortable
+• Can recur
+• Epley maneuver (canalith repositioning) effective in 80%
+• YouTube videos available for home Epley (if trained)
+
+Fall Prevention:
+• Remove throw rugs
+• Install grab bars in bathroom
+• Adequate lighting (especially nighttime)
+• Wear sturdy shoes
+• Use assistive devices if needed
+• Avoid alcohol
+
+When to Seek Emergency Care:
+• New neurological symptoms
+• Chest pain or breathing difficulty
+• Loss of consciousness
+• Unable to walk safely
+• Symptoms rapidly worsening
+
+---
+
+END OF GUIDELINE
+Citation: "OID-NEURO-DIZZY-003, Internal Clinical SOP (Synthetic for POC), Section: Red Flags & Differential, Oct 2025"
+

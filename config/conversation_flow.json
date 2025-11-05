@@ -1,0 +1,420 @@
+{
+  "flows": [
+    {
+      "displayName": "Main Flow",
+      "description": "Primary symptom intake and triage flow",
+      "pages": [
+        {
+          "displayName": "Greeting",
+          "entryFulfillment": {
+            "messages": [
+              {
+                "text": {
+                  "text": [
+                    "Hi — I'm the clinic's virtual assistant. I can help with quick symptom intake so your care team has the right information. What symptoms are you experiencing today?"
+                  ]
+                }
+              }
+            ]
+          },
+          "transitionRoutes": [
+            {
+              "intent": "symptom_headache",
+              "targetPage": "Symptom Intake"
+            },
+            {
+              "intent": "symptom_nausea",
+              "targetPage": "Symptom Intake"
+            },
+            {
+              "intent": "symptom_dizziness",
+              "targetPage": "Symptom Intake"
+            },
+            {
+              "intent": "symptom_fatigue",
+              "targetPage": "Symptom Intake"
+            },
+            {
+              "intent": "symptom_redflag",
+              "targetPage": "Triage Evaluation",
+              "triggerFulfillment": {
+                "setParameterActions": [
+                  {
+                    "parameter": "urgency",
+                    "value": "high"
+                  }
+                ]
+              }
+            },
+            {
+              "intent": "symptom_headache_redflag",
+              "targetPage": "Triage Evaluation",
+              "triggerFulfillment": {
+                "setParameterActions": [
+                  {
+                    "parameter": "urgency",
+                    "value": "high"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "displayName": "Symptom Intake",
+          "description": "Capture symptom details",
+          "form": {
+            "parameters": [
+              {
+                "displayName": "symptom_type",
+                "entityType": "@sys.any",
+                "required": true,
+                "fillBehavior": {
+                  "initialPromptFulfillment": {
+                    "messages": [
+                      {
+                        "text": {
+                          "text": ["What is your main symptom?"]
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "displayName": "duration",
+                "entityType": "@sys.duration",
+                "required": true,
+                "fillBehavior": {
+                  "initialPromptFulfillment": {
+                    "messages": [
+                      {
+                        "text": {
+                          "text": ["When did this symptom start? How long have you been experiencing it?"]
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "displayName": "severity",
+                "entityType": "@sys.number",
+                "required": true,
+                "fillBehavior": {
+                  "initialPromptFulfillment": {
+                    "messages": [
+                      {
+                        "text": {
+                          "text": ["On a scale of 0 to 10, how severe is your symptom? (0 = no pain, 10 = worst possible)"]
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "displayName": "additional_symptoms",
+                "entityType": "@sys.any",
+                "isList": true,
+                "required": false,
+                "fillBehavior": {
+                  "initialPromptFulfillment": {
+                    "messages": [
+                      {
+                        "text": {
+                          "text": ["Are you experiencing any other symptoms along with this?"]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "transitionRoutes": [
+            {
+              "condition": "$page.params.status = 'FINAL'",
+              "targetPage": "Clarifying Questions"
+            }
+          ]
+        },
+        {
+          "displayName": "Clarifying Questions",
+          "description": "Ask follow-up questions if needed",
+          "entryFulfillment": {
+            "messages": [
+              {
+                "text": {
+                  "text": [
+                    "Thank you for that information. Let me ask a few clarifying questions to better understand your situation."
+                  ]
+                }
+              }
+            ]
+          },
+          "form": {
+            "parameters": [
+              {
+                "displayName": "red_flag_check",
+                "entityType": "@sys.any",
+                "required": false,
+                "fillBehavior": {
+                  "initialPromptFulfillment": {
+                    "conditionalCases": [
+                      {
+                        "cases": [
+                          {
+                            "condition": "$session.params.symptom_type = 'headache'",
+                            "caseContent": [
+                              {
+                                "message": {
+                                  "text": {
+                                    "text": ["Have you noticed any vision changes, confusion, or is this the worst headache you've ever had?"]
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "condition": "$session.params.symptom_type = 'chest_pain'",
+                            "caseContent": [
+                              {
+                                "message": {
+                                  "text": {
+                                    "text": ["Are you experiencing shortness of breath, radiating pain to your arm or jaw, or sweating?"]
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "transitionRoutes": [
+            {
+              "condition": "$page.params.status = 'FINAL'",
+              "targetPage": "Triage Evaluation"
+            }
+          ]
+        },
+        {
+          "displayName": "Triage Evaluation",
+          "description": "Evaluate triage level and provide recommendations",
+          "entryFulfillment": {
+            "conditionalCases": [
+              {
+                "cases": [
+                  {
+                    "condition": "$session.params.urgency = 'high' OR $session.params.severity >= 8 OR $session.params.red_flag_check CONTAINS 'yes'",
+                    "caseContent": [
+                      {
+                        "message": {
+                          "text": {
+                            "text": ["Your symptoms suggest an urgent issue. Please call our nurse line at [INSERT NUMBER] or go to the nearest emergency department. I can connect you to the nurse line now if you'd like."]
+                          }
+                        }
+                      },
+                      {
+                        "additionalEvent": "triage_high"
+                      }
+                    ]
+                  },
+                  {
+                    "condition": "$session.params.severity >= 5 OR $session.params.duration >= 3",
+                    "caseContent": [
+                      {
+                        "message": {
+                          "text": {
+                            "text": ["I recommend scheduling a same-week visit with your primary care provider or using our telehealth service. Would you like me to help you schedule an appointment?"]
+                          }
+                        }
+                      },
+                      {
+                        "additionalEvent": "triage_medium"
+                      }
+                    ]
+                  },
+                  {
+                    "condition": "true",
+                    "caseContent": [
+                      {
+                        "message": {
+                          "text": {
+                            "text": ["This may improve with rest and home care. If symptoms persist beyond 3 days or worsen, please schedule a follow-up with your provider. Monitor your symptoms and reach out if you have concerns."]
+                          }
+                        }
+                      },
+                      {
+                        "additionalEvent": "triage_low"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "transitionRoutes": [
+            {
+              "targetPage": "Summary"
+            }
+          ]
+        },
+        {
+          "displayName": "Summary",
+          "description": "Provide structured summary",
+          "entryFulfillment": {
+            "messages": [
+              {
+                "text": {
+                  "text": [
+                    "Here's a summary of what you've shared:\n\nSymptom: $session.params.symptom_type\nDuration: $session.params.duration\nSeverity: $session.params.severity/10\nAdditional Symptoms: $session.params.additional_symptoms\nTriage Level: $session.params.triage\nRecommendation: $session.params.recommendation\n\nThis information will be shared with your care team. Would you like me to check available appointments or connect you to the nurse line?"
+                  ]
+                }
+              }
+            ],
+            "webhook": "generate-summary-webhook"
+          },
+          "transitionRoutes": [
+            {
+              "intent": "appointment_request",
+              "targetPage": "Appointment Booking"
+            },
+            {
+              "intent": "nurse_line_request",
+              "targetPage": "Nurse Line Transfer"
+            },
+            {
+              "condition": "true",
+              "targetPage": "End Flow"
+            }
+          ]
+        },
+        {
+          "displayName": "End Flow",
+          "entryFulfillment": {
+            "messages": [
+              {
+                "text": {
+                  "text": ["Thank you for using our virtual assistant. Your information has been recorded. Take care and feel better soon!"]
+                }
+              }
+            ]
+          },
+          "isFinalPage": true
+        }
+      ],
+      "eventHandlers": [
+        {
+          "event": "sys.no-match-default",
+          "targetPage": "Fallback Handler"
+        },
+        {
+          "event": "sys.no-input-default",
+          "targetPage": "Fallback Handler"
+        }
+      ]
+    },
+    {
+      "displayName": "Fallback Flow",
+      "description": "Handle unclear inputs",
+      "pages": [
+        {
+          "displayName": "Fallback Handler",
+          "form": {
+            "parameters": [
+              {
+                "displayName": "fallback_count",
+                "entityType": "@sys.number",
+                "defaultValue": 0
+              }
+            ]
+          },
+          "entryFulfillment": {
+            "conditionalCases": [
+              {
+                "cases": [
+                  {
+                    "condition": "$session.params.fallback_count = 0",
+                    "caseContent": [
+                      {
+                        "message": {
+                          "text": {
+                            "text": ["I'm sorry — I didn't quite catch that. Can you describe your main symptom in one sentence?"]
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": "$session.params.fallback_count = 1",
+                    "caseContent": [
+                      {
+                        "message": {
+                          "text": {
+                            "text": ["I'm still having trouble understanding. Would you like to connect to clinic staff directly? I can transfer you to the nurse line."]
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": "$session.params.fallback_count >= 2",
+                    "caseContent": [
+                      {
+                        "message": {
+                          "text": {
+                            "text": ["I apologize for the confusion. Let me connect you to our nurse line for personalized assistance. Please hold while I transfer you."]
+                          }
+                        }
+                      },
+                      {
+                        "additionalEvent": "escalate_to_human"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "setParameterActions": [
+              {
+                "parameter": "fallback_count",
+                "value": "$session.params.fallback_count + 1"
+              }
+            ]
+          },
+          "transitionRoutes": [
+            {
+              "condition": "$session.params.fallback_count < 2",
+              "targetPage": "Greeting"
+            },
+            {
+              "condition": "$session.params.fallback_count >= 2",
+              "targetPage": "Nurse Line Transfer"
+            }
+          ]
+        },
+        {
+          "displayName": "Nurse Line Transfer",
+          "entryFulfillment": {
+            "messages": [
+              {
+                "text": {
+                  "text": ["Connecting you to our nurse line now. Please hold."]
+                }
+              }
+            ],
+            "webhook": "transfer-to-nurse-line"
+          },
+          "isFinalPage": true
+        }
+      ]
+    }
+  ]
+}
+

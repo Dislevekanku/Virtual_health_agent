@@ -1,0 +1,118 @@
+{
+  "triage_responses": {
+    "high_urgency": {
+      "message": "Your symptoms suggest an urgent issue. Please call our nurse line at [INSERT NURSE LINE NUMBER] or go to the nearest emergency department. I can connect you to the nurse line now if you'd like.",
+      "triage_level": "high",
+      "actions": [
+        "Call nurse line",
+        "Go to emergency department",
+        "Call 911 if severe"
+      ]
+    },
+    "medium_urgency": {
+      "message": "I recommend scheduling a same-week visit with your primary care provider or using our telehealth service. Would you like me to help you schedule an appointment?",
+      "triage_level": "medium",
+      "actions": [
+        "Schedule same-week appointment",
+        "Book telehealth visit",
+        "Contact primary care provider"
+      ]
+    },
+    "low_urgency": {
+      "message": "This may improve with rest and home care. If symptoms persist beyond 3 days or worsen, please schedule a follow-up with your provider. Monitor your symptoms and reach out if you have concerns.",
+      "triage_level": "low",
+      "actions": [
+        "Self-care and rest",
+        "Monitor symptoms",
+        "Schedule follow-up if persists"
+      ]
+    }
+  },
+  "structured_output_template": {
+    "symptom": "$session.params.symptom_type",
+    "duration": "$session.params.duration",
+    "severity": "$session.params.severity",
+    "additional_symptoms": "$session.params.additional_symptoms",
+    "triage": "$session.params.triage",
+    "recommendation": "$session.params.recommendation",
+    "timestamp": "$sys.timestamp",
+    "session_id": "$session.id"
+  },
+  "system_prompts": {
+    "agent_persona": "You are a helpful, empathetic virtual health assistant for a clinic. Your role is to gather symptom information from patients before their visit. Respond in a calm, professional, and empathetic tone. Be concise and clear. NEVER provide medical diagnoses or treatment advice. Always remind users to seek professional medical attention for urgent symptoms.",
+    "tone_guidelines": [
+      "Use simple, clear language",
+      "Be empathetic and supportive",
+      "Avoid medical jargon",
+      "Never minimize patient concerns",
+      "Always validate their decision to seek help"
+    ],
+    "safety_guidelines": [
+      "Never diagnose conditions",
+      "Never prescribe treatments",
+      "Always escalate red flag symptoms",
+      "Maintain patient privacy and confidentiality",
+      "Comply with HIPAA requirements"
+    ]
+  },
+  "clarifying_questions": {
+    "headache": [
+      "Have you noticed any vision changes, confusion, or neck stiffness?",
+      "Is this the worst headache you've ever experienced?",
+      "Does the pain worsen with movement or light?",
+      "Have you had any recent head injuries?"
+    ],
+    "nausea": [
+      "Are you able to keep down any fluids?",
+      "Have you noticed any blood in vomit?",
+      "Do you have any abdominal pain?",
+      "Have you had a fever?"
+    ],
+    "dizziness": [
+      "Does the dizziness occur when you change positions?",
+      "Is the room spinning or do you feel lightheaded?",
+      "Have you had any falls or near-falls?",
+      "Are you experiencing any hearing changes or ringing?"
+    ],
+    "fatigue": [
+      "Has this affected your ability to do daily activities?",
+      "Have you noticed any other symptoms like fever or weight loss?",
+      "Are you getting adequate sleep?",
+      "Have there been any recent life changes or stressors?"
+    ],
+    "chest_pain": [
+      "Is the pain sharp or pressure-like?",
+      "Does it radiate to your arm, jaw, or back?",
+      "Are you short of breath?",
+      "Are you sweating or feeling nauseous?"
+    ]
+  },
+  "red_flag_criteria": {
+    "immediate_911": [
+      "Chest pain with shortness of breath",
+      "Difficulty breathing or severe respiratory distress",
+      "Sudden severe headache (worst ever)",
+      "Signs of stroke (face drooping, arm weakness, speech difficulty)",
+      "Loss of consciousness",
+      "Severe bleeding",
+      "Suicidal thoughts with plan"
+    ],
+    "urgent_care_needed": [
+      "High fever (>103°F) with confusion",
+      "Severe abdominal pain",
+      "Vomiting blood",
+      "Head injury with confusion or vomiting",
+      "Vision changes with severe headache",
+      "Severe allergic reaction",
+      "Uncontrolled pain despite medication"
+    ],
+    "same_day_evaluation": [
+      "Persistent vomiting (>24 hours)",
+      "High fever (>101°F) for >2 days",
+      "Moderate to severe pain (7-8/10)",
+      "New or worsening symptoms",
+      "Symptoms interfering with daily function"
+    ]
+  }
+}
+

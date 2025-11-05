@@ -1,0 +1,7 @@
+{
+  "project_id": "your-project-id",
+  "location": "us-central1",
+  "agent_id": "your-agent-id",
+  "agent_name": "projects/your-project-id/locations/us-central1/agents/your-agent-id"
+}
+

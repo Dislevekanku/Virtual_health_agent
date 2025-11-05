@@ -1,0 +1,193 @@
+CLINICAL GUIDELINE: NAUSEA AND VOMITING EVALUATION
+=================================================
+
+Document ID: OID-GI-NAUSEA-002
+Source: Internal Clinical SOP (Synthetic for POC)
+Last Updated: October 2025
+Section: Gastrointestinal Symptom Intake
+
+---
+
+1. RED FLAG SYMPTOMS (IMMEDIATE EVALUATION)
+-------------------------------------------
+
+The following require IMMEDIATE emergency evaluation:
+
+• Hematemesis (vomiting blood) - bright red or coffee-ground appearance
+• Severe abdominal pain with vomiting (concern for acute abdomen)
+• Signs of severe dehydration (decreased urine output, confusion, dizziness on standing)
+• Bilious vomiting (green/yellow) in surgical patient or with severe pain
+• Projectile vomiting in infant (concern for pyloric stenosis)
+• Vomiting with severe headache and neck stiffness
+• Vomiting with chest pain or shortness of breath
+• Signs of bowel obstruction (abdominal distention, no bowel movements, severe cramping)
+
+Action: Direct to emergency department or call 911
+
+---
+
+2. URGENT EVALUATION (SAME-DAY)
+-------------------------------
+
+Schedule urgent same-day appointment for:
+
+• Persistent vomiting >24 hours
+• Unable to tolerate oral fluids for 12+ hours
+• Vomiting in diabetic patient (risk of DKA)
+• Vomiting with fever >101°F (38.3°C)
+• Known pregnancy with severe vomiting (hyperemesis gravidarum)
+• Recent head injury with new nausea/vomiting
+• Vomiting in patient on chemotherapy (may need IV fluids)
+• Vomiting with severe dizziness or vertigo
+
+Recommended: Telehealth or in-person same-day visit
+
+---
+
+3. ROUTINE EVALUATION (24-72 HOURS)
+-----------------------------------
+
+Schedule routine appointment for:
+
+• Intermittent nausea for 3-7 days without vomiting
+• Mild nausea with vomiting 1-2 episodes/day
+• Nausea associated with known triggers (motion sickness, dietary)
+• Chronic nausea without weight loss or red flags
+• Medication-related nausea (new prescription)
+
+Recommended: Standard appointment within 2-3 days
+
+---
+
+4. SELF-CARE AND MONITORING
+---------------------------
+
+Appropriate for home management:
+
+• Mild nausea without vomiting
+• Duration <24 hours
+• Suspected dietary indiscretion or viral gastroenteritis
+• No dehydration signs
+• Tolerating clear fluids
+
+Self-Care Recommendations:
+• BRAT diet (bananas, rice, applesauce, toast) when able to tolerate
+• Clear fluids: water, electrolyte solutions, ginger ale, clear broth
+• Small frequent sips (1-2 oz every 15 minutes)
+• Avoid solid foods for 4-6 hours after last vomiting episode
+• Ginger tea or ginger candies
+• Rest in comfortable position
+• Avoid strong odors, fatty/spicy foods
+• Over-the-counter options: bismuth subsalicylate (Pepto-Bismol) if appropriate
+
+Hydration Goals:
+• Adults: 8-10 glasses of fluid per day
+• Monitor urine color (should be pale yellow)
+• If unable to keep fluids down for 12 hours → seek care
+
+When to Follow Up: If symptoms persist >48 hours, worsen, or signs of dehydration develop
+
+---
+
+5. CLINICAL ASSESSMENT PARAMETERS
+---------------------------------
+
+Key Questions to Ask:
+1. When did nausea/vomiting start? (onset)
+2. How many episodes of vomiting? (frequency)
+3. What does vomit look like? (appearance: clear, food, bile, blood)
+4. Can you keep fluids down? (hydration status)
+5. Any abdominal pain? Location and severity? (associated symptoms)
+6. Any fever, diarrhea, or other symptoms?
+7. Recent food intake or possible exposures? (etiology)
+8. Any similar illness in household/contacts? (infectious)
+9. Current medications? Any recent changes? (medication-induced)
+10. Possibility of pregnancy? (in females of reproductive age)
+
+Dehydration Assessment:
+• Mild: Slight dry mouth, normal urine output
+• Moderate: Dry mouth, decreased urine (dark yellow), thirst, mild dizziness
+• Severe: Very dry mouth, minimal/no urine, confusion, rapid heart rate, dizziness on standing
+
+Documentation Template:
+- Chief Complaint: Nausea/Vomiting
+- Onset: [acute/gradual]
+- Duration: [hours/days]
+- Frequency: [episodes/day]
+- Vomit appearance: [clear/bilious/bloody/food]
+- Oral intake: [tolerating/not tolerating]
+- Associated symptoms: [abdominal pain/fever/diarrhea/headache]
+- Dehydration signs: [yes/no]
+- Red flags: [yes/no - specify]
+- Triage level: [high/medium/low]
+
+---
+
+6. DIFFERENTIAL DIAGNOSIS CONSIDERATIONS
+----------------------------------------
+
+Common Causes:
+• Viral gastroenteritis
+• Food poisoning
+• Medication side effects
+• Motion sickness
+• Pregnancy (morning sickness)
+• Migraine-associated nausea
+• Anxiety/stress
+
+Serious Causes (Red Flags):
+• Bowel obstruction
+• Appendicitis
+• Cholecystitis
+• Pancreatitis
+• Diabetic ketoacidosis
+• Increased intracranial pressure
+• Myocardial infarction (especially in women)
+
+---
+
+7. SPECIAL POPULATIONS
+----------------------
+
+Pregnancy:
+• Morning sickness is common in first trimester
+• Hyperemesis gravidarum (severe vomiting) requires urgent evaluation
+• Assess for dehydration and ketones
+
+Chemotherapy Patients:
+• Anticipate nausea/vomiting with treatment
+• May require scheduled antiemetics
+• Early intervention for breakthrough symptoms
+
+Pediatric:
+• Higher risk of dehydration
+• Assess wet diapers (should have 4-6/day)
+• Pedialyte for rehydration
+
+Elderly:
+• Higher risk of complications
+• May have atypical presentations
+• Lower threshold for evaluation
+
+---
+
+8. MEDICATION CONSIDERATIONS
+----------------------------
+
+Antiemetic Options (Prescription Required):
+• Ondansetron (Zofran) - first line for most patients
+• Promethazine (Phenergan) - caution with sedation
+• Metoclopramide (Reglan) - use cautiously in young adults
+
+Over-the-Counter:
+• Bismuth subsalicylate (Pepto-Bismol)
+• Dimenhydrinate (Dramamine) for motion sickness
+• Ginger supplements
+
+Avoid: Solid food antiemetics until vomiting controlled
+
+---
+
+END OF GUIDELINE
+Citation: "OID-GI-NAUSEA-002, Internal Clinical SOP (Synthetic for POC), Section: Triage & Management, Oct 2025"
+
