@@ -14,28 +14,7 @@ A conversational AI health assistant built with Google Cloud Dialogflow CX, desi
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────┐
-│  Web Frontend   │  (Flask + HTML/CSS/JS)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Dialogflow CX  │  (Conversational AI Agent)
-│     Agent       │
-└────────┬────────┘
-         │
-         ├──► Symptom Intake
-         ├──► Clarifying Questions
-         ├──► Triage Evaluation
-         └──► Summary & Recommendations
-         │
-         ▼
-┌─────────────────┐
-│  Vertex AI      │  (Optional: Clinical Guidelines)
-│     Search      │
-└─────────────────┘
-```
+![Architecture Diagram](img/Gemini_Generated_Image_vp2cn4vp2cn4vp2c.png)
 
 ## 📋 Prerequisites
 
