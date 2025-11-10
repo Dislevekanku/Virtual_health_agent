@@ -46,7 +46,7 @@ def ensure_schedule_intent(agent_name: str, intents_client: dialogflow.IntentsCl
 
     for intent in existing_intents:
         if intent.display_name.lower() == "schedule appointment":
-            print("✔ Schedule Appointment intent already exists")
+            print("[OK] Schedule Appointment intent already exists")
             return intent
 
     training_phrases = [
@@ -63,7 +63,8 @@ def ensure_schedule_intent(agent_name: str, intents_client: dialogflow.IntentsCl
         priority=500000,
         training_phrases=[
             dialogflow.Intent.TrainingPhrase(
-                parts=[dialogflow.Intent.TrainingPhrase.Part(text=phrase)]
+                parts=[dialogflow.Intent.TrainingPhrase.Part(text=phrase)],
+                repeat_count=1,
             )
             for phrase in training_phrases
         ],
@@ -89,7 +90,7 @@ def ensure_schedule_intent(agent_name: str, intents_client: dialogflow.IntentsCl
     created = intents_client.create_intent(
         request=dialogflow.CreateIntentRequest(parent=agent_name, intent=intent)
     )
-    print("✔ Created Schedule Appointment intent")
+    print("[OK] Created Schedule Appointment intent")
     return created
 
 
@@ -125,7 +126,7 @@ def ensure_appointment_page(
     )
 
     if existing_page:
-        print("✔ Appointment Scheduling page already exists")
+        print("[OK] Appointment Scheduling page already exists")
         return existing_page
 
     appointment_page = dialogflow.Page(
@@ -196,7 +197,7 @@ def ensure_appointment_page(
     created_page = pages_client.create_page(
         request=dialogflow.CreatePageRequest(parent=flow_name, page=appointment_page)
     )
-    print("✔ Created Appointment Scheduling page")
+    print("[OK] Created Appointment Scheduling page")
     return created_page
 
 
@@ -210,7 +211,7 @@ def ensure_summary_route(
     existing_routes = summary_page.transition_routes or []
     for route in existing_routes:
         if route.intent == schedule_intent.name:
-            print("✔ Summary page already routes to Appointment Scheduling")
+            print("[OK] Summary page already routes to Appointment Scheduling")
             return
 
     new_route = dialogflow.TransitionRoute(
@@ -236,7 +237,7 @@ def ensure_summary_route(
             update_mask=field_mask_pb2.FieldMask(paths=["transition_routes"]),
         )
     )
-    print("✔ Added Schedule Appointment transition on Summary page")
+    print("[OK] Added Schedule Appointment transition on Summary page")
 
 
 def main():
