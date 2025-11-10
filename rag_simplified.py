@@ -534,6 +534,13 @@ class SimplifiedRAGPipeline:
 
 # Flask webhook for simplified deployment
 from flask import Flask, request, jsonify
+from fhir_mock import (
+    list_patients as fhir_list_patients,
+    get_patient as fhir_get_patient,
+    list_encounters as fhir_list_encounters,
+    list_appointments as fhir_list_appointments,
+    create_appointment as fhir_create_appointment,
+)
 
 app = Flask(__name__)
 
@@ -545,6 +552,189 @@ rag_pipeline = SimplifiedRAGPipeline(
     DATASTORE_ID
 )
 
+
+def _bundle(resources):
+    """Wrap resources in a simple FHIR bundle structure."""
+    return {
+        "resourceType": "Bundle",
+        "type": "collection",
+        "total": len(resources),
+        "entry": [{"resource": resource} for resource in resources],
+    }
+
+
+@app.route("/fhir/patients", methods=["GET"])
+def list_mock_patients():
+    """Expose mock patient resources."""
+    patients = fhir_list_patients()
+    logger.info("HTTP GET /fhir/patients", extra={"component": "mock_fhir", "count": len(patients)})
+    return jsonify(_bundle(patients))
+
+
+@app.route("/fhir/encounters", methods=["GET"])
+def list_mock_encounters():
+    """Expose mock encounter resources."""
+    patient_id = request.args.get("patient_id")
+    encounters = fhir_list_encounters(patient_id)
+    logger.info(
+        "HTTP GET /fhir/encounters",
+        extra={"component": "mock_fhir", "patient_id": patient_id or "*", "count": len(encounters)},
+    )
+    return jsonify(_bundle(encounters))
+
+
+@app.route("/fhir/appointments", methods=["GET"])
+def list_mock_appointments():
+    """Expose mock appointment resources."""
+    patient_id = request.args.get("patient_id")
+    appointments = fhir_list_appointments(patient_id)
+    logger.info(
+        "HTTP GET /fhir/appointments",
+        extra={"component": "mock_fhir", "patient_id": patient_id or "*", "count": len(appointments)},
+    )
+    return jsonify(_bundle(appointments))
+
+
+@app.route("/fhir/appointments", methods=["POST"])
+def create_mock_appointment():
+    """Create a mock appointment via API."""
+    payload = request.get_json(silent=True) or {}
+
+    required_fields = ["patient_id", "appointment_type", "preferred_day", "preferred_time", "reason_summary"]
+    missing = [field for field in required_fields if not payload.get(field)]
+    if missing:
+        message = f"Missing required fields: {', '.join(missing)}"
+        logger.warning(
+            "HTTP POST /fhir/appointments failed",
+            extra={"component": "mock_fhir", "missing": missing},
+        )
+        return jsonify({"error": message}), 400
+
+    appointment = fhir_create_appointment(
+        patient_id=payload["patient_id"],
+        appointment_type=payload["appointment_type"],
+        preferred_day=payload["preferred_day"],
+        preferred_time=payload["preferred_time"],
+        reason_summary=payload["reason_summary"],
+        channel=payload.get("channel", "telehealth"),
+    )
+
+    logger.info(
+        "HTTP POST /fhir/appointments success",
+        extra={"component": "mock_fhir", "appointment_id": appointment["id"]},
+    )
+    return jsonify(appointment), 201
+
+
+def _extract_session_parameters(req: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract session parameters from the Dialogflow CX webhook request."""
+    session_info = req.get("sessionInfo") or {}
+    return session_info.get("parameters") or {}
+
+
+def _handle_missing_details(missing_fields: List[str]) -> Dict[str, Any]:
+    """Generate a follow-up response when scheduling details are incomplete."""
+    pretty_fields = ", ".join(missing_fields[:-1]) + (" and " if len(missing_fields) > 1 else "") + missing_fields[-1]
+    prompt = (
+        f"I want to schedule that for you, but I still need your {pretty_fields}. "
+        "Could you share those details?"
+    )
+    return {
+        "fulfillment_response": {
+            "messages": [
+                {"text": {"text": [prompt]}},
+            ]
+        }
+    }
+
+
+def handle_schedule_appointment(req: Dict[str, Any]) -> Dict[str, Any]:
+    """Handle the Schedule Appointment intent via the mock FHIR API."""
+    parameters = _extract_session_parameters(req)
+
+    patient_id = parameters.get("patient_id") or "patient-001"
+    appointment_type = parameters.get("appointment_type") or "telehealth"
+    preferred_day = parameters.get("preferred_day")
+    preferred_time = parameters.get("preferred_time")
+    channel = parameters.get("appointment_channel") or parameters.get("visit_mode") or "telehealth"
+    symptom = parameters.get("symptom_type") or parameters.get("primary_complaint") or parameters.get("symptom")
+    duration = parameters.get("duration")
+
+    missing = [field for field in ["preferred_day", "preferred_time"] if not parameters.get(field)]
+    if missing:
+        return _handle_missing_details(missing)
+
+    reason_parts = []
+    if symptom:
+        reason_parts.append(symptom)
+    if duration:
+        reason_parts.append(f"duration: {duration}")
+    reason_summary = ", ".join(reason_parts) if reason_parts else "Symptom follow-up"
+
+    appointment = fhir_create_appointment(
+        patient_id=patient_id,
+        appointment_type=appointment_type,
+        preferred_day=preferred_day,
+        preferred_time=preferred_time,
+        reason_summary=reason_summary,
+        channel=channel,
+    )
+
+    patient = fhir_get_patient(patient_id)
+    encounters = fhir_list_encounters(patient_id)
+    latest_encounter = encounters[0] if encounters else None
+
+    confirmation_message = (
+        f"I've scheduled a {channel} {appointment_type} visit for {preferred_day} at {preferred_time}. "
+        "You'll receive a confirmation shortly."
+    )
+
+    follow_up_message = "I've noted your recent symptoms so the care team can prepare."
+    if latest_encounter:
+        follow_up_message = (
+            f"I've also attached your recent encounter ({latest_encounter.get('reasonCode', [{'text': 'Recent visit'}])[0].get('text')}) "
+            "for continuity of care."
+        )
+
+    logger.info(
+        "Schedule Appointment webhook handled",
+        extra={
+            "component": "webhook",
+            "operation": "schedule_appointment",
+            "patient_id": patient_id,
+            "appointment_id": appointment["id"],
+            "channel": channel,
+        },
+    )
+
+    session_parameters = {
+        "appointment_id": appointment["id"],
+        "appointment_status": appointment["status"],
+        "appointment_day": preferred_day,
+        "appointment_time": preferred_time,
+        "appointment_channel": channel,
+    }
+
+    if patient:
+        session_parameters["patient_name"] = patient["name"][0]["given"][0]
+
+    return {
+        "fulfillment_response": {
+            "messages": [
+                {"text": {"text": [confirmation_message]}},
+                {"text": {"text": [follow_up_message]}},
+            ]
+        },
+        "session_info": {
+            "parameters": session_parameters,
+        },
+        "payload": {
+            "fhirAppointment": appointment,
+            "patient": patient,
+            "latestEncounter": latest_encounter,
+        },
+    }
+
 @app.route('/webhook', methods=['POST'])
 def simplified_rag_webhook():
     """Simplified Dialogflow CX webhook with medical RAG"""
@@ -554,6 +744,19 @@ def simplified_rag_webhook():
         req = request.get_json()
         logger.info(f"Received medical query request")
         
+        intent_display_name = (
+            (req.get("intentInfo") or {}).get("displayName") or ""
+        )
+        fulfillment_tag = (req.get("fulfillmentInfo") or {}).get("tag") or ""
+
+        if fulfillment_tag == "schedule_appointment" or intent_display_name.lower() == "schedule appointment":
+            logger.info(
+                "Routing to schedule appointment handler",
+                extra={"component": "webhook", "intent": intent_display_name, "tag": fulfillment_tag},
+            )
+            response_payload = handle_schedule_appointment(req)
+            return jsonify(response_payload)
+
         # Extract user query
         user_query = ""
         if "queryResult" in req and "queryText" in req["queryResult"]:
