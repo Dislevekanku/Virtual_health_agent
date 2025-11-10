@@ -16,7 +16,7 @@ import json
 import logging
 import re
 import requests
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from google.auth import default
 from google.auth.transport.requests import Request
@@ -514,8 +514,8 @@ class SimplifiedRAGPipeline:
         self.search_client = SimplifiedSearchClient(project_id, search_location, datastore_id)
         self.generation_client = SimplifiedGeminiClient(project_id, generation_location)
     
-    def process_query(self, query: str, top_k: int = 5) -> RAGResponse:
-        """Process medical query through simplified RAG pipeline"""
+    def process_query(self, query: str, top_k: int = 5) -> Tuple[RAGResponse, List[SearchResult]]:
+        """Process medical query through simplified RAG pipeline and return response with sources"""
         
         logger.info(f"Processing medical query: {query}")
         
@@ -524,13 +524,13 @@ class SimplifiedRAGPipeline:
         
         if not search_results:
             logger.warning("No clinical guidelines found for query")
-            return self.generation_client._create_fallback_response(query)
+            return self.generation_client._create_fallback_response(query), []
         
         # Step 2: Generate response with medical context
         rag_response = self.generation_client.generate_response(query, search_results)
         
         logger.info(f"RAG processing complete. Triage: {rag_response.triage_level}, Citations: {len(rag_response.citations)}")
-        return rag_response
+        return rag_response, search_results
 
 # Flask webhook for simplified deployment
 from flask import Flask, request, jsonify
@@ -735,6 +735,22 @@ def handle_schedule_appointment(req: Dict[str, Any]) -> Dict[str, Any]:
         },
     }
 
+def build_grounded_message(rag_response: RAGResponse, search_results: List[SearchResult]) -> str:
+    """Compose a grounded response that explicitly references clinical guidance."""
+    
+    if not search_results:
+        return rag_response.answer
+    
+    citation_lines = []
+    for idx, result in enumerate(search_results[:3], start=1):
+        title = result.title or "Clinical Guidance"
+        source = result.source or "Trusted Medical Source"
+        citation_lines.append(f"[{idx}] {title} — {source}")
+    
+    citation_block = "According to clinical guidance:\n" + "\n".join(citation_lines)
+    return f"{citation_block}\n\n{rag_response.answer}"
+
+
 @app.route('/webhook', methods=['POST'])
 def simplified_rag_webhook():
     """Simplified Dialogflow CX webhook with medical RAG"""
@@ -772,7 +788,8 @@ def simplified_rag_webhook():
         logger.info(f"Processing: {user_query}")
         
         # Process through simplified RAG pipeline
-        rag_response = rag_pipeline.process_query(user_query)
+        rag_response, search_results = rag_pipeline.process_query(user_query)
+        grounded_message = build_grounded_message(rag_response, search_results)
         
         # Format response for Dialogflow CX
         response_payload = {
@@ -780,7 +797,7 @@ def simplified_rag_webhook():
                 "messages": [
                     {
                         "text": {
-                            "text": [rag_response.answer]
+                            "text": [grounded_message]
                         }
                     }
                 ]
@@ -788,6 +805,15 @@ def simplified_rag_webhook():
             "payload": {
                 "triage_level": rag_response.triage_level,
                 "citations": rag_response.citations,
+                "grounding_sources": [
+                    {
+                        "title": result.title,
+                        "source": result.source,
+                        "document_id": result.document_id,
+                        "score": result.score,
+                    }
+                    for result in search_results
+                ],
                 "next_steps": rag_response.next_steps,
                 "confidence": rag_response.confidence,
                 "emergency_flags": rag_response.emergency_flags
@@ -828,13 +854,23 @@ def test_simplified_rag():
         query = data.get("query", "What are red flag headache symptoms?")
         
         # Process through simplified RAG pipeline
-        rag_response = rag_pipeline.process_query(query)
+        rag_response, search_results = rag_pipeline.process_query(query)
+        grounded_message = build_grounded_message(rag_response, search_results)
         
         return jsonify({
             "query": query,
-            "answer": rag_response.answer,
+            "answer": grounded_message,
             "triage_level": rag_response.triage_level,
             "citations": rag_response.citations,
+            "grounding_sources": [
+                {
+                    "title": result.title,
+                    "source": result.source,
+                    "document_id": result.document_id,
+                    "score": result.score,
+                }
+                for result in search_results
+            ],
             "next_steps": rag_response.next_steps,
             "confidence": rag_response.confidence,
             "emergency_flags": rag_response.emergency_flags
