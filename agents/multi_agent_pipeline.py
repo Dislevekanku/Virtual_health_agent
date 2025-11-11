@@ -19,7 +19,7 @@ import json
 import uuid
 from typing import Any, Dict, List
 
-from google.adk.agents import Agent, SequentialAgent
+from google.adk.agents import Agent, SequentialAgent, LoopAgent
 from google.adk.tools import FunctionTool
 from google.adk.runners import InMemoryRunner
 from google.adk.models.google_llm import Gemini
@@ -88,6 +88,16 @@ patient_context_tool = FunctionTool(fetch_patient_context)
 
 schedule_tool = FunctionTool(check_availability)
 
+
+def approve_response(message: str = "", tool_context=None) -> Dict[str, Any]:
+    """Escalate loop when the critique is satisfactory."""
+    if tool_context is not None:
+        tool_context.actions.escalate = True
+    return {"status": "approved", "notes": message}
+
+
+approve_tool = FunctionTool(approve_response)
+
 # ---------------------------------------------------------------------------
 # Agent definitions
 # ---------------------------------------------------------------------------
@@ -146,8 +156,8 @@ If information is missing, assume cautious defaults. Return JSON only.
     output_key="triage",
 )
 
-response_agent = Agent(
-    name="ResponseAgent",
+draft_response_agent = Agent(
+    name="DraftResponseAgent",
     model=Gemini(
         model="gemini-2.5-flash-lite",
         project=PROJECT_ID,
@@ -155,31 +165,108 @@ response_agent = Agent(
         retry_options=retry_config,
     ),
     instruction="""
-Compose the final response leveraging:
+Compose an initial response leveraging:
   - Intake JSON: {intake_json}
   - Triage decision: {triage}
   - Patient context: {patient_context}
 
-Return a JSON payload with keys:
-  - message: empathetic, evidence-aware guidance for the patient (plain text, no Markdown bullets).
+Return JSON with keys:
+  - message: empathetic guidance for the patient (plain text, no Markdown bullets).
   - triage_level: echo triage.urgency.
   - reasoning: triage.reasons
-  - intake: parsed intake_json (as JSON).
+  - intake: parsed intake_json (JSON object).
   - patient_context: summarized view (id, recent encounters summaries).
   - schedule: call the tool `check_availability` on the patient's id if an appointment might be needed; include available slots.
   - citations: array of strings referencing clinical guidance sources (use any available, else empty).
 """,
-    output_key="response_payload",
+    output_key="draft_response",
     tools=[schedule_tool],
+)
+
+critic_agent = Agent(
+    name="CriticAgent",
+    model=Gemini(
+        model="gemini-2.5-flash-lite",
+        project=PROJECT_ID,
+        location=LOCATION,
+        retry_options=retry_config,
+    ),
+    instruction="""
+Review the draft response {draft_response} for:
+- Clinical safety (no diagnostic or treatment guarantees, includes disclaimers),
+- Completeness (addresses reported symptoms and offers next steps),
+- Tone (supportive and empathetic),
+- Appropriateness of scheduling suggestions (if present).
+
+Return JSON with keys:
+  - score: integer 0-10
+  - issues: array of short strings detailing problems (empty if none)
+  - approved: true/false (true only if score >= 8 AND no safety issues)
+  - summary: one sentence summary of the critique
+""",
+    output_key="critique",
+)
+
+refiner_agent = Agent(
+    name="RefinerAgent",
+    model=Gemini(
+        model="gemini-2.5-flash-lite",
+        project=PROJECT_ID,
+        location=LOCATION,
+        retry_options=retry_config,
+    ),
+    instruction="""
+You are a response refiner. Given:
+  - draft_response: {draft_response}
+  - critique: {critique}
+
+If critique.approved is true OR critique.score >= 8 with no critical issues, call the `approve_response` tool with a brief note and RETURN THE SAME draft_response JSON unchanged.
+
+Otherwise:
+- Improve the response to address the issues.
+- Keep the JSON structure identical to the draft (keys: message, triage_level, reasoning, intake, patient_context, schedule, citations).
+- Ensure tone is empathetic, no unverified medical claims, and include clear next steps.
+- Return ONLY the updated JSON object.
+""",
+    output_key="draft_response",
+    tools=[approve_tool],
+)
+
+final_response_agent = Agent(
+    name="FinalResponseAgent",
+    model=Gemini(
+        model="gemini-2.5-flash-lite",
+        project=PROJECT_ID,
+        location=LOCATION,
+        retry_options=retry_config,
+    ),
+    instruction="""
+Produce the final patient-facing response using the refined draft {draft_response}. Confirm it remains empathetic, safe, and concise.
+Return JSON with the same keys as the draft response (message, triage_level, reasoning, intake, patient_context, schedule, citations). Output JSON only with double quotes and no surrounding commentary.
+""",
+    output_key="response_payload",
 )
 
 
 # ---------------------------------------------------------------------------
-# Orchestration: Intake → Data → Reasoning → Response
+# Orchestration: Intake → Data → Reasoning → Draft → Loop(Critic+Refiner) → Final
 # ---------------------------------------------------------------------------
+loop_agent = LoopAgent(
+    name="QualityLoop",
+    sub_agents=[critic_agent, refiner_agent],
+    max_iterations=3,
+)
+
 root_agent = SequentialAgent(
     name="VHA_Pipeline",
-    sub_agents=[intake_agent, data_agent, reasoning_agent, response_agent],
+    sub_agents=[
+        intake_agent,
+        data_agent,
+        reasoning_agent,
+        draft_response_agent,
+        loop_agent,
+        final_response_agent,
+    ],
 )
 
 runner = InMemoryRunner(agent=root_agent)
@@ -219,7 +306,7 @@ def run_virtual_health_assistant(user_message: str) -> Dict[str, Any]:
         new_message=message,
     ):
         if (
-            getattr(event, "author", "") == response_agent.name
+            getattr(event, "author", "") == final_response_agent.name
             and event.is_final_response()
         ):
             final_event = event
