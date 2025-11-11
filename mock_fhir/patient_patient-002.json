@@ -1,0 +1,39 @@
+{
+  "resourceType": "Patient",
+  "id": "patient-002",
+  "identifier": [
+    {
+      "system": "https://health.example.org/mrn",
+      "value": "MRN-0002"
+    }
+  ],
+  "name": [
+    {
+      "use": "official",
+      "family": "Smith",
+      "given": ["Alex"]
+    }
+  ],
+  "gender": "male",
+  "birthDate": "1978-02-04",
+  "telecom": [
+    {
+      "system": "phone",
+      "value": "+1-555-0150",
+      "use": "mobile"
+    }
+  ],
+  "address": [
+    {
+      "line": ["456 Oak Avenue"],
+      "city": "Springfield",
+      "state": "IL",
+      "postalCode": "62705",
+      "country": "US"
+    }
+  ],
+  "managingOrganization": {
+    "display": "Sample Health Primary Care"
+  }
+}
+

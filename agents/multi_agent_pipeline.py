@@ -15,7 +15,7 @@ Agents are orchestrated with Google ADK (Sequential + Parallel agents).
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from google.adk.agents import Agent, SequentialAgent, ParallelAgent
 from google.adk.tools import FunctionTool
@@ -23,10 +23,10 @@ from google.adk.runners import InMemoryRunner
 from google.adk.models.google_llm import Gemini
 from google.genai import types
 
-from fhir_mock import (
-    get_patient,
-    list_encounters,
-    list_appointments,
+from mock_fhir import (
+    load_patient,
+    load_encounters,
+    load_observations,
 )
 
 
@@ -58,24 +58,34 @@ def _fetch_patient_context(intake_json: Any = None) -> Dict[str, Any]:
 
     patient_id = intake_data.get("patient_id") or "patient-001"
 
-    patient = get_patient(patient_id)
-    encounters = list_encounters(patient_id)
-    appointments = list_appointments(patient_id)
+    patient = load_patient(patient_id)
+    encounters = load_encounters(patient_id)
+    observations = load_observations(patient_id)
 
     return {
         "patient_id": patient_id,
         "patient": patient,
         "recent_encounters": encounters[:3],
-        "upcoming_appointments": appointments[:3],
+        "recent_observations": observations[:5],
     }
 
 
-patient_context_tool = FunctionTool.from_function(
-    func=_fetch_patient_context,
-    name="fetch_patient_context",
-    description="Retrieve patient profile, recent encounters, and appointments based on intake JSON.",
-)
+def _check_availability(patient_id: str = "patient-001", date_range: str = "next-7-days") -> Dict[str, Any]:
+    """Return mock scheduling availability for a patient."""
 
+    from mock_fhir import load_schedule_slots
+
+    slots: List[Dict[str, Any]] = load_schedule_slots(patient_id, date_range)
+    return {
+        "patient_id": patient_id,
+        "date_range": date_range,
+        "available_slots": slots,
+    }
+
+
+patient_context_tool = FunctionTool(_fetch_patient_context)
+
+schedule_tool = FunctionTool(_check_availability)
 
 # ---------------------------------------------------------------------------
 # Agent definitions
@@ -84,7 +94,7 @@ intake_agent = Agent(
     name="IntakeAgent",
     model=Gemini(model="gemini-2.5-flash-lite", retry_options=retry_config),
     instruction="""
-You are an intake parser. Read the user's latest message and convert it into JSON with keys:
+You are an intake parser. Read the user's latest message (context key: user_input) and convert it into JSON with keys:
   - symptom: short description of the primary concern
   - duration: free-text duration from the user (or "unknown")
   - severity: integer 1-10 if stated, else "unknown"
@@ -92,7 +102,6 @@ You are an intake parser. Read the user's latest message and convert it into JSO
   - free_text: copy of the user's message
 Return JSON only with double quotes (no Markdown fences).
 """,
-    input_key="user_input",
     output_key="intake_json",
 )
 
@@ -103,7 +112,6 @@ data_agent = Agent(
 Use the tool `fetch_patient_context` with the latest intake JSON to retrieve patient context.
 Return JSON with a single key `patient_context` whose value is the tool result.
 """,
-    input_key="intake_json",
     output_key="patient_context",
     tools=[patient_context_tool],
 )
@@ -137,9 +145,11 @@ Return a JSON payload with keys:
   - reasoning: triage.reasons
   - intake: parsed intake_json (as JSON).
   - patient_context: summarized view (id, recent encounters summaries).
+  - schedule: call the tool `check_availability` on the patient's id if an appointment might be needed; include available slots.
   - citations: array of strings referencing clinical guidance sources (use any available, else empty).
 """,
     output_key="response_payload",
+    tools=[schedule_tool],
 )
 
 
