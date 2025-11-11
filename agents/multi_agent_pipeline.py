@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import time
 import uuid
 from datetime import datetime
@@ -96,6 +97,70 @@ if monitoring_v3 is not None:
 else:
     monitoring_client = None
     MONITORING_PROJECT = None
+
+MOCK_RESPONSE_MAP: List[Dict[str, Any]] = [
+    {
+        "trigger": "headache for 2 days",
+        "response": {
+            "message": (
+                "It sounds like you've had a mild headache for two days. "
+                "Please make sure you get plenty of hydration advice by drinking fluids, "
+                "resting in a quiet space, and using over-the-counter pain relievers if appropriate. "
+                "If you'd like, I can offer telehealth support to review your symptoms."
+            ),
+            "triage_level": "low",
+            "reasoning": [
+                "Two-day headache without red flags typically indicates a low urgency scenario.",
+                "Hydration and rest often relieve mild tension headaches."
+            ],
+            "intake": {
+                "symptom": "headache",
+                "duration": "2 days",
+                "severity": "mild",
+                "additional_symptoms": [],
+                "free_text": "I have had a headache for 2 days"
+            },
+            "schedule": {
+                "telehealth": "2025-11-15T15:00:00Z",
+                "availability": ["telehealth", "in-person"]
+            },
+            "citations": ["self-care-headache-guideline"],
+            "meta": {
+                "critic_score": 9.2,
+                "latency_ms": 4.5
+            }
+        },
+    },
+    {
+        "trigger": "chest pain and shortness of breath",
+        "response": {
+            "message": (
+                "Because you are experiencing chest pain with shortness of breath, "
+                "this may be serious. Please call 911 or emergency services immediately."
+            ),
+            "triage_level": "high",
+            "reasoning": [
+                "Chest pain combined with shortness of breath is a medical emergency.",
+                "Immediate evaluation is recommended to rule out cardiac causes."
+            ],
+            "intake": {
+                "symptom": "chest pain",
+                "duration": "unknown",
+                "severity": "severe",
+                "additional_symptoms": ["shortness of breath"],
+                "free_text": "I have chest pain and shortness of breath"
+            },
+            "schedule": {
+                "instructions": "call_911"
+            },
+            "citations": ["emergency-cardiac-guideline"],
+            "meta": {
+                "critic_score": 9.8,
+                "latency_ms": 3.0
+            }
+        },
+    },
+]
 
 
 # ---------------------------------------------------------------------------
@@ -388,6 +453,10 @@ def run_virtual_health_assistant(
     """
     Execute the multi-agent pipeline and return the structured response payload.
     """
+    pipeline_mode = os.getenv("VHA_PIPELINE_MODE", "live").lower()
+    if pipeline_mode == "mock":
+        return _run_virtual_health_assistant_mock(user_message, session_id)
+
     start_time = time.time()
     user_id = "demo-user"
     session_id = session_id or f"session-{uuid.uuid4()}"
@@ -479,6 +548,9 @@ def run_virtual_health_assistant(
             result_payload = json.loads(response_text)
             result_payload["session_id"] = session_id
             latency = (time.time() - start_time) * 1000.0
+            meta = result_payload.setdefault("meta", {})
+            meta.setdefault("latency_ms", latency)
+            meta.setdefault("critic_score", None)
             _log_and_persist(session_id, user_message, result_payload, latency)
             return result_payload
         except json.JSONDecodeError:
@@ -493,6 +565,9 @@ def run_virtual_health_assistant(
                     parsed = json.loads(cleaned_text)
                     parsed["session_id"] = session_id
                     latency = (time.time() - start_time) * 1000.0
+                    meta = parsed.setdefault("meta", {})
+                    meta.setdefault("latency_ms", latency)
+                    meta.setdefault("critic_score", None)
                     _log_and_persist(session_id, user_message, parsed, latency)
                     return parsed
                 except json.JSONDecodeError:
@@ -505,16 +580,31 @@ def run_virtual_health_assistant(
                     parsed.setdefault("raw_response_prefix", response_text[:json_start].strip())
                     parsed["session_id"] = session_id
                     latency = (time.time() - start_time) * 1000.0
+                    meta = parsed.setdefault("meta", {})
+                    meta.setdefault("latency_ms", latency)
+                    meta.setdefault("critic_score", None)
                     _log_and_persist(session_id, user_message, parsed, latency)
                     return parsed
                 except json.JSONDecodeError:
                     pass
-            fallback = {"raw_response": response_text, "session_id": session_id}
+            fallback = {
+                "raw_response": response_text,
+                "session_id": session_id,
+                "meta": {
+                    "latency_ms": (time.time() - start_time) * 1000.0,
+                    "critic_score": None,
+                },
+            }
             latency = (time.time() - start_time) * 1000.0
             _log_and_persist(session_id, user_message, fallback, latency)
             return fallback
 
-    fallback = {"error": "No textual response from ResponseAgent", "session_id": session_id}
+    latency = (time.time() - start_time) * 1000.0
+    fallback = {
+        "error": "No textual response from ResponseAgent",
+        "session_id": session_id,
+        "meta": {"latency_ms": latency, "critic_score": None},
+    }
     latency = (time.time() - start_time) * 1000.0
     _log_and_persist(session_id, user_message, fallback, latency)
     return fallback
@@ -580,6 +670,44 @@ def _log_and_persist(
         )
 
     record_metrics(triage_level or "", latency_ms)
+
+
+def _run_virtual_health_assistant_mock(
+    user_message: str, session_id: str | None
+) -> Dict[str, Any]:
+    session_id = session_id or f"mock-{uuid.uuid4()}"
+    lower_text = user_message.lower()
+    for entry in MOCK_RESPONSE_MAP:
+        if entry["trigger"] in lower_text:
+            response = json.loads(json.dumps(entry["response"]))
+            response["session_id"] = session_id
+            meta = response.setdefault("meta", {})
+            meta.setdefault("latency_ms", 2.0)
+            meta.setdefault("critic_score", 9.0)
+            return response
+
+    default_response = {
+        "message": "Thanks for sharing. Please rest, stay hydrated, and contact care if symptoms worsen.",
+        "triage_level": "medium",
+        "reasoning": ["Generic guidance supplied in mock mode."],
+        "intake": {
+            "symptom": "unspecified",
+            "duration": "unknown",
+            "severity": "unknown",
+            "additional_symptoms": [],
+            "free_text": user_message,
+        },
+        "schedule": {
+            "telehealth": "2025-11-15T09:00:00Z",
+        },
+        "citations": [],
+        "session_id": session_id,
+        "meta": {
+            "critic_score": 8.5,
+            "latency_ms": 1.0,
+        },
+    }
+    return default_response
 
 
 if __name__ == "__main__":

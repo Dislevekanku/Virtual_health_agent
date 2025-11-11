@@ -1,0 +1,17 @@
+[
+  {
+    "id": "t1",
+    "input": "I have had a headache for 2 days",
+    "expected_urgency": "low",
+    "expected_actions": ["hydration", "telehealth"],
+    "min_critic_score": 8.0
+  },
+  {
+    "id": "t2",
+    "input": "I have chest pain and shortness of breath",
+    "expected_urgency": "high",
+    "expected_actions": ["call 911", "emergency"],
+    "min_critic_score": 9.0
+  }
+]
+
