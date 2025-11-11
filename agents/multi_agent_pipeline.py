@@ -14,10 +14,12 @@ Agents are orchestrated with Google ADK (Sequential + Parallel agents).
 
 from __future__ import annotations
 
+import asyncio
 import json
+import uuid
 from typing import Any, Dict, List
 
-from google.adk.agents import Agent, SequentialAgent, ParallelAgent
+from google.adk.agents import Agent, SequentialAgent
 from google.adk.tools import FunctionTool
 from google.adk.runners import InMemoryRunner
 from google.adk.models.google_llm import Gemini
@@ -39,21 +41,20 @@ retry_config = types.HttpRetryOptions(
     http_status_codes=[429, 500, 503],
 )
 
+PROJECT_ID = "ai-agent-health-assistant"
+LOCATION = "us-central1"
+
 
 # ---------------------------------------------------------------------------
 # DataAgent tool: fetch patient context from mock FHIR layer
 # ---------------------------------------------------------------------------
-def _fetch_patient_context(intake_json: Any = None) -> Dict[str, Any]:
+def fetch_patient_context(intake_json: str = "") -> Dict[str, Any]:
     """Return patient context for downstream reasoning."""
 
-    if isinstance(intake_json, str):
-        try:
-            intake_data = json.loads(intake_json)
-        except json.JSONDecodeError:
-            intake_data = {}
-    elif isinstance(intake_json, dict):
-        intake_data = intake_json
-    else:
+    intake_data: Dict[str, Any]
+    try:
+        intake_data = json.loads(intake_json) if intake_json else {}
+    except json.JSONDecodeError:
         intake_data = {}
 
     patient_id = intake_data.get("patient_id") or "patient-001"
@@ -70,7 +71,7 @@ def _fetch_patient_context(intake_json: Any = None) -> Dict[str, Any]:
     }
 
 
-def _check_availability(patient_id: str = "patient-001", date_range: str = "next-7-days") -> Dict[str, Any]:
+def check_availability(patient_id: str = "patient-001", date_range: str = "next-7-days") -> Dict[str, Any]:
     """Return mock scheduling availability for a patient."""
 
     from mock_fhir import load_schedule_slots
@@ -83,16 +84,21 @@ def _check_availability(patient_id: str = "patient-001", date_range: str = "next
     }
 
 
-patient_context_tool = FunctionTool(_fetch_patient_context)
+patient_context_tool = FunctionTool(fetch_patient_context)
 
-schedule_tool = FunctionTool(_check_availability)
+schedule_tool = FunctionTool(check_availability)
 
 # ---------------------------------------------------------------------------
 # Agent definitions
 # ---------------------------------------------------------------------------
 intake_agent = Agent(
     name="IntakeAgent",
-    model=Gemini(model="gemini-2.5-flash-lite", retry_options=retry_config),
+    model=Gemini(
+        model="gemini-2.5-flash-lite",
+        project=PROJECT_ID,
+        location=LOCATION,
+        retry_options=retry_config,
+    ),
     instruction="""
 You are an intake parser. Read the user's latest message (context key: user_input) and convert it into JSON with keys:
   - symptom: short description of the primary concern
@@ -107,7 +113,12 @@ Return JSON only with double quotes (no Markdown fences).
 
 data_agent = Agent(
     name="DataAgent",
-    model=Gemini(model="gemini-2.5-flash-lite", retry_options=retry_config),
+    model=Gemini(
+        model="gemini-2.5-flash-lite",
+        project=PROJECT_ID,
+        location=LOCATION,
+        retry_options=retry_config,
+    ),
     instruction="""
 Use the tool `fetch_patient_context` with the latest intake JSON to retrieve patient context.
 Return JSON with a single key `patient_context` whose value is the tool result.
@@ -118,7 +129,12 @@ Return JSON with a single key `patient_context` whose value is the tool result.
 
 reasoning_agent = Agent(
     name="ReasoningAgent",
-    model=Gemini(model="gemini-2.5-flash-lite", retry_options=retry_config),
+    model=Gemini(
+        model="gemini-2.5-flash-lite",
+        project=PROJECT_ID,
+        location=LOCATION,
+        retry_options=retry_config,
+    ),
     instruction="""
 You are a clinical triage assistant. Using the structured intake data {intake_json}
 and optional patient context {patient_context}, classify urgency as one of: low, medium, high.
@@ -132,7 +148,12 @@ If information is missing, assume cautious defaults. Return JSON only.
 
 response_agent = Agent(
     name="ResponseAgent",
-    model=Gemini(model="gemini-2.5-flash-lite", retry_options=retry_config),
+    model=Gemini(
+        model="gemini-2.5-flash-lite",
+        project=PROJECT_ID,
+        location=LOCATION,
+        retry_options=retry_config,
+    ),
     instruction="""
 Compose the final response leveraging:
   - Intake JSON: {intake_json}
@@ -154,16 +175,11 @@ Return a JSON payload with keys:
 
 
 # ---------------------------------------------------------------------------
-# Orchestration: Intake → Parallel(Reasoning, Data) → Response
+# Orchestration: Intake → Data → Reasoning → Response
 # ---------------------------------------------------------------------------
-parallel_stage = ParallelAgent(
-    name="ReasoningAndData",
-    sub_agents=[reasoning_agent, data_agent],
-)
-
 root_agent = SequentialAgent(
     name="VHA_Pipeline",
-    sub_agents=[intake_agent, parallel_stage, response_agent],
+    sub_agents=[intake_agent, data_agent, reasoning_agent, response_agent],
 )
 
 runner = InMemoryRunner(agent=root_agent)
@@ -173,8 +189,66 @@ def run_virtual_health_assistant(user_message: str) -> Dict[str, Any]:
     """
     Execute the multi-agent pipeline and return the structured response payload.
     """
-    result = runner.run({"user_input": user_message})
-    return result.get("response_payload", result)
+    user_id = "demo-user"
+    session_id = f"session-{uuid.uuid4()}"
+
+    async def _ensure_session():
+        session = await runner.session_service.get_session(
+            app_name=runner.app_name,
+            user_id=user_id,
+            session_id=session_id,
+        )
+        if not session:
+            await runner.session_service.create_session(
+                app_name=runner.app_name,
+                user_id=user_id,
+                session_id=session_id,
+            )
+
+    asyncio.run(_ensure_session())
+
+    message = types.Content(
+        role="user",
+        parts=[types.Part(text=user_message)],
+    )
+
+    final_event = None
+    for event in runner.run(
+        user_id=user_id,
+        session_id=session_id,
+        new_message=message,
+    ):
+        if (
+            getattr(event, "author", "") == response_agent.name
+            and event.is_final_response()
+        ):
+            final_event = event
+
+    if not final_event or not final_event.content:
+        return {"error": "Pipeline produced no response"}
+
+    text_parts = []
+    for part in final_event.content.parts or []:
+        if part.text:
+            text_parts.append(part.text)
+    response_text = "".join(text_parts).strip()
+
+    if response_text:
+        try:
+            return json.loads(response_text)
+        except json.JSONDecodeError:
+            json_start = response_text.find("{")
+            if json_start != -1:
+                candidate = response_text[json_start:]
+                try:
+                    parsed = json.loads(candidate)
+                    parsed.setdefault("raw_response_prefix", response_text[:json_start].strip())
+                    return parsed
+                except json.JSONDecodeError:
+                    pass
+            return {"raw_response": response_text}
+
+    return {"error": "No textual response from ResponseAgent"}
 
 
 if __name__ == "__main__":
