@@ -13,8 +13,9 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Iterable, Dict, Any
+import base64
 
 
 def gather_guidance_documents(source_dir: pathlib.Path) -> Iterable[Dict[str, Any]]:
@@ -27,20 +28,27 @@ def gather_guidance_documents(source_dir: pathlib.Path) -> Iterable[Dict[str, An
         document_id = path.stem.replace("_", "-").lower()
         source_name = path.stem.replace("_", " ").title()
 
-        yield {
+        raw_bytes = base64.b64encode(text.encode("utf-8")).decode("utf-8")
+
+        document = {
             "id": document_id,
+            "content": {
+                "mimeType": "text/plain",
+                "rawBytes": raw_bytes,
+            },
             "structData": {
                 "title": source_name,
                 "source": "Public Clinical Guidance",
                 "snippet": text[:5000],  # Discovery Engine snippet limit
                 "raw_text": text,
-                "updated_at": datetime.utcnow().isoformat() + "Z",
+                "updated_at": datetime.now(timezone.utc).isoformat(),
                 "tags": ["clinical_guidance", "symptom_triage"],
                 "metadata": {
                     "original_file": str(path),
                 },
             },
         }
+        yield document
 
 
 def write_jsonl(documents: Iterable[Dict[str, Any]], output_path: pathlib.Path) -> None:
