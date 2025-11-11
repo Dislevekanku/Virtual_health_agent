@@ -16,7 +16,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 import uuid
+from datetime import datetime
 from typing import Any, Dict, List
 
 from google.adk.agents import Agent, SequentialAgent, LoopAgent
@@ -24,6 +26,21 @@ from google.adk.tools import FunctionTool
 from google.adk.runners import InMemoryRunner
 from google.adk.models.google_llm import Gemini
 from google.genai import types
+
+try:
+    from google.cloud import logging as gcloud_logging
+except ImportError:
+    gcloud_logging = None
+
+try:
+    from google.cloud import firestore  # type: ignore
+except ImportError:
+    firestore = None
+
+try:
+    from google.cloud import monitoring_v3  # type: ignore
+except ImportError:
+    monitoring_v3 = None
 
 from mock_fhir import (
     load_patient,
@@ -43,6 +60,42 @@ retry_config = types.HttpRetryOptions(
 
 PROJECT_ID = "ai-agent-health-assistant"
 LOCATION = "us-central1"
+
+if gcloud_logging is not None:
+    try:
+        logging_client = gcloud_logging.Client()
+        LOGGER = logging_client.logger("vha-interactions")
+    except Exception:
+        LOGGER = None
+else:
+    LOGGER = None
+
+if firestore is not None:
+    try:
+        firestore_client = firestore.Client()
+        FIRESTORE_SERVER_TIMESTAMP = firestore.SERVER_TIMESTAMP
+        FirestoreArrayUnion = firestore.ArrayUnion
+    except Exception:
+        firestore_client = None
+        FIRESTORE_SERVER_TIMESTAMP = None
+        FirestoreArrayUnion = None
+else:
+    firestore_client = None
+    FIRESTORE_SERVER_TIMESTAMP = None
+    FirestoreArrayUnion = None
+
+LOCAL_SESSION_STORE: Dict[str, List[Dict[str, Any]]] = {}
+
+if monitoring_v3 is not None:
+    try:
+        monitoring_client = monitoring_v3.MetricServiceClient()
+        MONITORING_PROJECT = f"projects/{PROJECT_ID}"
+    except Exception:
+        monitoring_client = None
+        MONITORING_PROJECT = None
+else:
+    monitoring_client = None
+    MONITORING_PROJECT = None
 
 
 # ---------------------------------------------------------------------------
@@ -97,6 +150,63 @@ def approve_response(message: str = "", tool_context=None) -> Dict[str, Any]:
 
 
 approve_tool = FunctionTool(approve_response)
+
+
+def record_metrics(triage_level: str, latency_ms: float) -> None:
+    if monitoring_client is None or MONITORING_PROJECT is None:
+        return
+
+    end_seconds = int(time.time())
+    end_nanos = int((time.time() - end_seconds) * 1e9)
+
+    interval = monitoring_v3.TimeInterval(
+        end_time={"seconds": end_seconds, "nanos": end_nanos},
+    )
+
+    def _build_series(metric_type: str, value_field: str, value: float):
+        typed_value = monitoring_v3.TypedValue(
+            **{value_field: value}
+        )
+        point = monitoring_v3.Point(interval=interval, value=typed_value)
+        ts = monitoring_v3.TimeSeries()
+        ts.metric.type = metric_type
+        ts.resource.type = "global"
+        ts.resource.labels["project_id"] = PROJECT_ID
+        ts.points.append(point)
+        return ts
+
+    series = [
+        _build_series(
+            "custom.googleapis.com/vha/requests_total",
+            "int64_value",
+            1,
+        )
+    ]
+
+    if triage_level and triage_level.lower() == "high":
+        series.append(
+            _build_series(
+                "custom.googleapis.com/vha/triage_high_count",
+                "int64_value",
+                1,
+            )
+        )
+
+    series.append(
+        _build_series(
+            "custom.googleapis.com/vha/request_latency_ms",
+            "double_value",
+            latency_ms,
+        )
+    )
+
+    try:
+        monitoring_client.create_time_series(
+            name=MONITORING_PROJECT,
+            time_series=series,
+        )
+    except Exception:
+        pass
 
 # ---------------------------------------------------------------------------
 # Agent definitions
@@ -272,12 +382,40 @@ root_agent = SequentialAgent(
 runner = InMemoryRunner(agent=root_agent)
 
 
-def run_virtual_health_assistant(user_message: str) -> Dict[str, Any]:
+def run_virtual_health_assistant(
+    user_message: str, session_id: str | None = None
+) -> Dict[str, Any]:
     """
     Execute the multi-agent pipeline and return the structured response payload.
     """
+    start_time = time.time()
     user_id = "demo-user"
-    session_id = f"session-{uuid.uuid4()}"
+    session_id = session_id or f"session-{uuid.uuid4()}"
+
+    recent_history = []
+    if firestore_client is not None:
+        try:
+            doc = (
+                firestore_client.collection("sessions")
+                .document(session_id)
+                .get()
+            )
+            if doc.exists:
+                history = doc.to_dict().get("history", [])
+                recent_history = history[-5:]
+        except Exception:
+            recent_history = []
+    else:
+        recent_history = LOCAL_SESSION_STORE.get(session_id, [])[-5:]
+
+    history_text = ""
+    if recent_history:
+        snippets = []
+        for entry in recent_history:
+            snippets.append(
+                f"User: {entry.get('user_input','')}\nResponse: {entry.get('response','')}\n"
+            )
+        history_text = "\nRecent conversation history:\n" + "\n".join(snippets)
 
     async def _ensure_session():
         session = await runner.session_service.get_session(
@@ -294,25 +432,41 @@ def run_virtual_health_assistant(user_message: str) -> Dict[str, Any]:
 
     asyncio.run(_ensure_session())
 
+    composed_message = user_message
+    if history_text:
+        composed_message = f"{history_text}\nCurrent user input: {user_message}"
+
     message = types.Content(
         role="user",
-        parts=[types.Part(text=user_message)],
+        parts=[types.Part(text=composed_message)],
     )
 
     final_event = None
-    for event in runner.run(
-        user_id=user_id,
-        session_id=session_id,
-        new_message=message,
-    ):
-        if (
-            getattr(event, "author", "") == final_response_agent.name
-            and event.is_final_response()
+    try:
+        for event in runner.run(
+            user_id=user_id,
+            session_id=session_id,
+            new_message=message,
         ):
-            final_event = event
+            if (
+                getattr(event, "author", "") == final_response_agent.name
+                and event.is_final_response()
+            ):
+                final_event = event
+    except RuntimeError as runtime_error:
+        fallback = {
+            "error": f"Pipeline runtime error: {runtime_error}",
+            "session_id": session_id,
+        }
+        latency = (time.time() - start_time) * 1000.0
+        _log_and_persist(session_id, user_message, fallback, latency)
+        return fallback
 
     if not final_event or not final_event.content:
-        return {"error": "Pipeline produced no response"}
+        fallback = {"error": "Pipeline produced no response", "session_id": session_id}
+        latency = (time.time() - start_time) * 1000.0
+        _log_and_persist(session_id, user_message, fallback, latency)
+        return fallback
 
     text_parts = []
     for part in final_event.content.parts or []:
@@ -322,20 +476,110 @@ def run_virtual_health_assistant(user_message: str) -> Dict[str, Any]:
 
     if response_text:
         try:
-            return json.loads(response_text)
+            result_payload = json.loads(response_text)
+            result_payload["session_id"] = session_id
+            latency = (time.time() - start_time) * 1000.0
+            _log_and_persist(session_id, user_message, result_payload, latency)
+            return result_payload
         except json.JSONDecodeError:
+            cleaned_text = response_text.strip()
+            if cleaned_text.startswith("```"):
+                first_newline = cleaned_text.find("\n")
+                last_ticks = cleaned_text.rfind("```")
+                if first_newline != -1 and last_ticks != -1:
+                    cleaned_text = cleaned_text[first_newline + 1:last_ticks].strip()
+            if cleaned_text != response_text:
+                try:
+                    parsed = json.loads(cleaned_text)
+                    parsed["session_id"] = session_id
+                    latency = (time.time() - start_time) * 1000.0
+                    _log_and_persist(session_id, user_message, parsed, latency)
+                    return parsed
+                except json.JSONDecodeError:
+                    response_text = cleaned_text
             json_start = response_text.find("{")
             if json_start != -1:
                 candidate = response_text[json_start:]
                 try:
                     parsed = json.loads(candidate)
                     parsed.setdefault("raw_response_prefix", response_text[:json_start].strip())
+                    parsed["session_id"] = session_id
+                    latency = (time.time() - start_time) * 1000.0
+                    _log_and_persist(session_id, user_message, parsed, latency)
                     return parsed
                 except json.JSONDecodeError:
                     pass
-            return {"raw_response": response_text}
+            fallback = {"raw_response": response_text, "session_id": session_id}
+            latency = (time.time() - start_time) * 1000.0
+            _log_and_persist(session_id, user_message, fallback, latency)
+            return fallback
 
-    return {"error": "No textual response from ResponseAgent"}
+    fallback = {"error": "No textual response from ResponseAgent", "session_id": session_id}
+    latency = (time.time() - start_time) * 1000.0
+    _log_and_persist(session_id, user_message, fallback, latency)
+    return fallback
+
+
+def _log_and_persist(
+    session_id: str,
+    user_text: str,
+    response_payload: Dict[str, Any],
+    latency_ms: float,
+) -> None:
+    intake = response_payload.get("intake", {})
+    triage_level = response_payload.get("triage_level")
+
+    if LOGGER is not None:
+        try:
+            LOGGER.log_struct(
+                {
+                    "session_id": session_id,
+                    "user_input": user_text,
+                    "intake": intake,
+                    "triage_level": triage_level,
+                    "final_response": response_payload.get("message"),
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "latency_ms": latency_ms,
+                }
+            )
+        except Exception:
+            pass
+
+    if firestore_client is not None:
+        try:
+            turn_entry = {
+                "timestamp": datetime.utcnow().isoformat(),
+                "user_input": user_text,
+                "response": response_payload.get("message"),
+                "triage_level": triage_level,
+                "reasoning": response_payload.get("reasoning", []),
+            }
+            session_ref = firestore_client.collection("sessions").document(
+                session_id
+            )
+            if FIRESTORE_SERVER_TIMESTAMP is not None and FirestoreArrayUnion is not None:
+                session_ref.set(
+                    {
+                        "session_id": session_id,
+                        "updated_at": FIRESTORE_SERVER_TIMESTAMP,
+                        "history": FirestoreArrayUnion([turn_entry]),
+                    },
+                    merge=True,
+                )
+        except Exception:
+            pass
+    else:
+        LOCAL_SESSION_STORE.setdefault(session_id, []).append(
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "user_input": user_text,
+                "response": response_payload.get("message"),
+                "triage_level": triage_level,
+                "reasoning": response_payload.get("reasoning", []),
+            }
+        )
+
+    record_metrics(triage_level or "", latency_ms)
 
 
 if __name__ == "__main__":
