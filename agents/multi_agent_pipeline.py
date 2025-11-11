@@ -103,10 +103,10 @@ MOCK_RESPONSE_MAP: List[Dict[str, Any]] = [
         "trigger": "headache for 2 days",
         "response": {
             "message": (
-                "It sounds like you've had a mild headache for two days. "
-                "Please make sure you get plenty of hydration advice by drinking fluids, "
-                "resting in a quiet space, and using over-the-counter pain relievers if appropriate. "
-                "If you'd like, I can offer telehealth support to review your symptoms."
+                "Thanks for sharing. Based on your description, this is considered a low urgency situation. "
+                "Please make sure you get plenty of hydration advice by drinking fluids, resting in a quiet space, "
+                "and using over-the-counter pain relievers if appropriate. If you'd like, I can offer telehealth support "
+                "to review your symptoms or help schedule a visit if things change."
             ),
             "triage_level": "low",
             "reasoning": [
@@ -135,8 +135,8 @@ MOCK_RESPONSE_MAP: List[Dict[str, Any]] = [
         "trigger": "chest pain and shortness of breath",
         "response": {
             "message": (
-                "Because you are experiencing chest pain with shortness of breath, "
-                "this may be serious. Please call 911 or emergency services immediately."
+                "Because you are experiencing chest pain with shortness of breath, this is classified as a high urgency situation. "
+                "Please call 911 or emergency services immediately, and do not drive yourself."
             ),
             "triage_level": "high",
             "reasoning": [
@@ -340,10 +340,17 @@ draft_response_agent = Agent(
         retry_options=retry_config,
     ),
     instruction="""
-Compose an initial response leveraging:
+Compose an initial patient-facing response leveraging:
   - Intake JSON: {intake_json}
   - Triage decision: {triage}
   - Patient context: {patient_context}
+
+Guardrails:
+  - Use an empathetic tone and acknowledge the patient's concern.
+  - Do NOT provide definitive diagnoses or medication dosages; use supportive, cautious language.
+  - Explicitly mention the triage level (e.g., "This is considered low urgency").
+  - Offer at least one actionable next step aligned with the triage level.
+  - If citations exist, reference them in the message (e.g., "According to [source]").
 
 Return JSON with keys:
   - message: empathetic guidance for the patient (plain text, no Markdown bullets).
@@ -352,7 +359,8 @@ Return JSON with keys:
   - intake: parsed intake_json (JSON object).
   - patient_context: summarized view (id, recent encounters summaries).
   - schedule: call the tool `check_availability` on the patient's id if an appointment might be needed; include available slots.
-  - citations: array of strings referencing clinical guidance sources (use any available, else empty).
+  - citations: array of strings referencing clinical guidance sources (use any available).
+Return JSON only.
 """,
     output_key="draft_response",
     tools=[schedule_tool],
@@ -367,17 +375,27 @@ critic_agent = Agent(
         retry_options=retry_config,
     ),
     instruction="""
-Review the draft response {draft_response} for:
-- Clinical safety (no diagnostic or treatment guarantees, includes disclaimers),
-- Completeness (addresses reported symptoms and offers next steps),
-- Tone (supportive and empathetic),
-- Appropriateness of scheduling suggestions (if present).
+You are the safety critic for a clinical triage assistant. Review the draft response {draft_response} and ensure it follows these guardrails:
+1. Safety: No definitive diagnoses or prescriptive medication dosages; escalation instructions must be present for red flags.
+2. Completeness: Message must explicitly mention the triage level and provide at least one concrete next-step action.
+3. Tone: Response must sound empathetic and patient-facing.
+4. Citations: If citations are provided, the message should reference them.
 
-Return JSON with keys:
-  - score: integer 0-10
-  - issues: array of short strings detailing problems (empty if none)
-  - approved: true/false (true only if score >= 8 AND no safety issues)
-  - summary: one sentence summary of the critique
+Scoring rules:
+- Start with score = 10
+- Subtract 3 points for each safety breach (diagnosis certainty, missing escalation when needed, etc.)
+- Subtract 2 points if no actionable next step is provided
+- Subtract 1 point if tone is not empathetic or patient-friendly
+Score floor is 0.
+
+Return strict JSON with keys:
+{
+  "score": <number>,
+  "issues": ["..."],
+  "approved": true/false,
+  "summary": "short sentence"
+}
+Approved must be true ONLY if score >= 8 and no safety issues remain.
 """,
     output_key="critique",
 )
@@ -391,17 +409,18 @@ refiner_agent = Agent(
         retry_options=retry_config,
     ),
     instruction="""
-You are a response refiner. Given:
-  - draft_response: {draft_response}
-  - critique: {critique}
+You refine the patient response using the current draft {draft_response} and critique {critique}.
+Guardrails you MUST enforce in the revised JSON:
+- Maintain empathetic, concise tone.
+- Do NOT provide definitive diagnoses or medication dosages.
+- Message must explicitly mention the triage level.
+- Provide at least one actionable next step aligned with the triage level (self-care, telehealth, emergency, etc.).
+- Reference citations/sources if they exist in the draft.
+- Encourage escalation when red-flag symptoms are present.
 
-If critique.approved is true OR critique.score >= 8 with no critical issues, call the `approve_response` tool with a brief note and RETURN THE SAME draft_response JSON unchanged.
-
-Otherwise:
-- Improve the response to address the issues.
-- Keep the JSON structure identical to the draft (keys: message, triage_level, reasoning, intake, patient_context, schedule, citations).
-- Ensure tone is empathetic, no unverified medical claims, and include clear next steps.
-- Return ONLY the updated JSON object.
+If critique.approved is true OR (critique.score >= 8 with no listed issues), call the `approve_response` tool with a brief note and return the original draft JSON unchanged.
+Otherwise, update the draft JSON (keeping the same keys: message, triage_level, reasoning, intake, patient_context, schedule, citations, meta) so that all guardrails are satisfied.
+Return JSON only.
 """,
     output_key="draft_response",
     tools=[approve_tool],
@@ -416,8 +435,16 @@ final_response_agent = Agent(
         retry_options=retry_config,
     ),
     instruction="""
-Produce the final patient-facing response using the refined draft {draft_response}. Confirm it remains empathetic, safe, and concise.
-Return JSON with the same keys as the draft response (message, triage_level, reasoning, intake, patient_context, schedule, citations). Output JSON only with double quotes and no surrounding commentary.
+You are a clinical triage assistant speaking to patients.
+Requirements for the final patient-facing response derived from {draft_response}:
+- Maintain an empathetic, concise tone and acknowledge the patient's concern.
+- NEVER provide a definitive diagnosis or medication dosage; use cautious language ("might", "could").
+- Clearly state the triage level (e.g., "Your situation is classified as medium urgency").
+- Offer at least one actionable next step appropriate to the triage level (self-care, telehealth, call emergency, etc.).
+- If citations are supplied in the draft, reference them explicitly (e.g., "According to [source]").
+- Encourage escalation when red-flag symptoms are present.
+- Keep the JSON structure identical to the draft response (message, triage_level, reasoning, intake, patient_context, schedule, citations, meta).
+Return JSON only with double quotes and no surrounding commentary.
 """,
     output_key="response_payload",
 )
@@ -687,7 +714,7 @@ def _run_virtual_health_assistant_mock(
             return response
 
     default_response = {
-        "message": "Thanks for sharing. Please rest, stay hydrated, and contact care if symptoms worsen.",
+        "message": "Based on what you shared, this is treated as a medium urgency situation. Please rest, stay hydrated, and monitor your symptoms closely. If anything worsens, arrange a telehealth visit or urgent evaluation.",
         "triage_level": "medium",
         "reasoning": ["Generic guidance supplied in mock mode."],
         "intake": {
