@@ -109,10 +109,12 @@ MOCK_RESPONSE_MAP: List[Dict[str, Any]] = [
                 "to review your symptoms or help schedule a visit if things change."
             ),
             "triage_level": "low",
+            "urgency_score": 3,
             "reasoning": [
                 "Two-day headache without red flags typically indicates a low urgency scenario.",
                 "Hydration and rest often relieve mild tension headaches."
             ],
+            "red_flags": [],
             "intake": {
                 "symptom": "headache",
                 "duration": "2 days",
@@ -139,10 +141,12 @@ MOCK_RESPONSE_MAP: List[Dict[str, Any]] = [
                 "Please call 911 or emergency services immediately, and do not drive yourself."
             ),
             "triage_level": "high",
+            "urgency_score": 9,
             "reasoning": [
                 "Chest pain combined with shortness of breath is a medical emergency.",
                 "Immediate evaluation is recommended to rule out cardiac causes."
             ],
+            "red_flags": ["chest pain", "shortness of breath"],
             "intake": {
                 "symptom": "chest pain",
                 "duration": "unknown",
@@ -166,8 +170,23 @@ MOCK_RESPONSE_MAP: List[Dict[str, Any]] = [
 # ---------------------------------------------------------------------------
 # DataAgent tool: fetch patient context from mock FHIR layer
 # ---------------------------------------------------------------------------
+def _extract_visit_notes(encounters: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Extract visit notes/summaries from encounter records for session memory."""
+    notes = []
+    for enc in encounters[:5]:  # Limit to 5 most recent
+        note_entry = {
+            "encounter_id": enc.get("id", "unknown"),
+            "date": enc.get("period", {}).get("start", "unknown"),
+            "reason": enc.get("reasonCode", [{}])[0].get("text", "No reason provided") if enc.get("reasonCode") else "No reason provided",
+            "diagnosis": enc.get("diagnosis", [{}])[0].get("condition", {}).get("display", "No diagnosis") if enc.get("diagnosis") else "No diagnosis",
+            "status": enc.get("status", "unknown"),
+        }
+        notes.append(note_entry)
+    return notes
+
+
 def fetch_patient_context(intake_json: str = "") -> Dict[str, Any]:
-    """Return patient context for downstream reasoning."""
+    """Return patient context for downstream reasoning, including prior visit notes."""
 
     intake_data: Dict[str, Any]
     try:
@@ -180,12 +199,14 @@ def fetch_patient_context(intake_json: str = "") -> Dict[str, Any]:
     patient = load_patient(patient_id)
     encounters = load_encounters(patient_id)
     observations = load_observations(patient_id)
+    visit_notes = _extract_visit_notes(encounters)
 
     return {
         "patient_id": patient_id,
         "patient": patient,
         "recent_encounters": encounters[:3],
         "recent_observations": observations[:5],
+        "visit_notes": visit_notes,  # Prior visit summaries for session memory
     }
 
 
@@ -285,13 +306,28 @@ intake_agent = Agent(
         retry_options=retry_config,
     ),
     instruction="""
-You are an intake parser. Read the user's latest message (context key: user_input) and convert it into JSON with keys:
-  - symptom: short description of the primary concern
-  - duration: free-text duration from the user (or "unknown")
-  - severity: integer 1-10 if stated, else "unknown"
-  - additional_symptoms: list of extra symptoms mentioned (strings)
-  - free_text: copy of the user's message
-Return JSON only with double quotes (no Markdown fences).
+You are an intake parser with enhanced symptom parsing logic. Read the user's latest message (context key: user_input) and convert it into structured JSON.
+
+Parsing rules:
+1. Symptom extraction: Identify the primary symptom (e.g., "headache", "chest pain", "dizziness"). If multiple symptoms are mentioned, list the most prominent first.
+2. Duration parsing: Extract time expressions like "2 days", "since yesterday", "for a week", "3 hours ago". Normalize to a readable format or "unknown" if not stated.
+3. Severity parsing: Look for explicit numbers (1-10), words like "mild", "moderate", "severe", "intense", or pain scales. Convert to integer 1-10 if numeric, or map words: mild=3, moderate=5, severe=8, extreme=10. Use "unknown" if not stated.
+4. Additional symptoms: Extract any secondary symptoms mentioned (e.g., "nausea", "fever", "shortness of breath", "dizziness").
+5. Edge cases: If the message is vague or incomplete, use "unknown" for missing fields rather than guessing.
+
+Output JSON structure (all fields required):
+{
+  "symptom": "<primary symptom or 'unspecified'>",
+  "duration": "<normalized duration or 'unknown'>",
+  "severity": <integer 1-10 or "unknown">,
+  "additional_symptoms": ["<symptom1>", "<symptom2>", ...],
+  "free_text": "<exact copy of user message>",
+  "patient_id": "<extract if mentioned, else omit>"
+}
+
+Validation: Ensure severity is either an integer 1-10 or the string "unknown". Ensure additional_symptoms is always an array (empty [] if none). Ensure all keys are present.
+
+Return JSON only with double quotes (no Markdown fences, no code blocks).
 """,
     output_key="intake_json",
 )
@@ -305,8 +341,15 @@ data_agent = Agent(
         retry_options=retry_config,
     ),
     instruction="""
-Use the tool `fetch_patient_context` with the latest intake JSON to retrieve patient context.
-Return JSON with a single key `patient_context` whose value is the tool result.
+Use the tool `fetch_patient_context` with the latest intake JSON to retrieve patient context, including:
+- Patient demographics and medical history
+- Recent encounters (last 3)
+- Recent observations (last 5)
+- Prior visit notes (summaries from encounters for session memory)
+
+The tool will return patient context including visit_notes which contain prior visit summaries (reason, diagnosis, date) that can inform triage decisions.
+
+Return JSON with a single key `patient_context` whose value is the complete tool result (including visit_notes).
 """,
     output_key="patient_context",
     tools=[patient_context_tool],
@@ -321,12 +364,30 @@ reasoning_agent = Agent(
         retry_options=retry_config,
     ),
     instruction="""
-You are a clinical triage assistant. Using the structured intake data {intake_json}
-and optional patient context {patient_context}, classify urgency as one of: low, medium, high.
-Provide a JSON object with keys:
-  - urgency: low | medium | high
-  - reasons: list with two short bullet-style justification strings
-If information is missing, assume cautious defaults. Return JSON only.
+You are a clinical triage assistant with integrated urgency scoring. Using the structured intake data {intake_json}
+and optional patient context {patient_context} (including visit_notes for prior history), classify urgency and compute a preliminary score.
+
+Triage logic based on clinical patterns:
+- HIGH urgency (score 8-10): Chest pain, severe shortness of breath, loss of consciousness, severe trauma, stroke symptoms, severe allergic reactions, severe abdominal pain with vomiting.
+- MEDIUM urgency (score 5-7): Moderate pain lasting >24h, fever >101°F, persistent symptoms worsening, moderate injury, concerning symptoms without red flags.
+- LOW urgency (score 1-4): Mild symptoms <3 days, minor injuries, routine concerns, stable chronic conditions.
+
+Urgency scoring algorithm:
+1. Base score from symptom severity: severe=8, moderate=5, mild=2, unknown=4
+2. Adjust for red-flag symptoms: +2 for chest pain/shortness of breath, +1 for high fever/severe pain
+3. Adjust for duration: acute (<24h) +1, chronic (>7 days) -1
+4. Adjust for prior history: if similar symptoms in visit_notes, consider escalation (+1)
+5. Clamp final score to 1-10 range
+
+Output JSON structure:
+{
+  "urgency": "low" | "medium" | "high",
+  "urgency_score": <integer 1-10>,
+  "reasons": ["<reason 1: symptom-based>", "<reason 2: context-based or duration-based>"],
+  "red_flags": ["<any red flag symptoms detected>"] or []
+}
+
+If information is missing, assume cautious defaults (medium urgency, score 5). Return JSON only with double quotes.
 """,
     output_key="triage",
 )
@@ -355,9 +416,11 @@ Guardrails:
 Return JSON with keys:
   - message: empathetic guidance for the patient (plain text, no Markdown bullets).
   - triage_level: echo triage.urgency.
+  - urgency_score: echo triage.urgency_score (if available, else null).
   - reasoning: triage.reasons
+  - red_flags: triage.red_flags (if available, else []).
   - intake: parsed intake_json (JSON object).
-  - patient_context: summarized view (id, recent encounters summaries).
+  - patient_context: summarized view (id, recent encounters summaries, visit_notes summary).
   - schedule: call the tool `check_availability` on the patient's id if an appointment might be needed; include available slots.
   - citations: array of strings referencing clinical guidance sources (use any available).
 Return JSON only.
@@ -716,7 +779,9 @@ def _run_virtual_health_assistant_mock(
     default_response = {
         "message": "Based on what you shared, this is treated as a medium urgency situation. Please rest, stay hydrated, and monitor your symptoms closely. If anything worsens, arrange a telehealth visit or urgent evaluation.",
         "triage_level": "medium",
+        "urgency_score": 5,
         "reasoning": ["Generic guidance supplied in mock mode."],
+        "red_flags": [],
         "intake": {
             "symptom": "unspecified",
             "duration": "unknown",
