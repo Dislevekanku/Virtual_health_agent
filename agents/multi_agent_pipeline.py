@@ -85,7 +85,7 @@ else:
     FIRESTORE_SERVER_TIMESTAMP = None
     FirestoreArrayUnion = None
 
-LOCAL_SESSION_STORE: Dict[str, List[Dict[str, Any]]] = {}
+LOCAL_SESSION_STORE: Dict[str, Dict[str, Any]] = {}  # session_id -> {history: [], agent_outputs: []}
 
 if monitoring_v3 is not None:
     try:
@@ -618,7 +618,8 @@ def run_virtual_health_assistant(
         except Exception:
             recent_history = []
     else:
-        recent_history = LOCAL_SESSION_STORE.get(session_id, [])[-5:]
+        session_data = LOCAL_SESSION_STORE.get(session_id, {})
+        recent_history = session_data.get("history", [])[-5:] if isinstance(session_data, dict) else []
 
     history_text = ""
     if recent_history:
@@ -653,13 +654,41 @@ def run_virtual_health_assistant(
         parts=[types.Part(text=composed_message)],
     )
 
+    # Track all agent outputs for logging and session memory
+    agent_outputs: List[Dict[str, Any]] = []
     final_event = None
+    
     try:
         for event in runner.run(
             user_id=user_id,
             session_id=session_id,
             new_message=message,
         ):
+            # Capture agent outputs for logging and session memory
+            event_author = getattr(event, "author", "")
+            if event_author and event.content:
+                event_text = ""
+                for part in event.content.parts or []:
+                    if part.text:
+                        event_text += part.text
+                
+                if event_text.strip():
+                    agent_output = {
+                        "agent": event_author,
+                        "output": event_text.strip(),
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "event_type": "agent_output"
+                    }
+                    agent_outputs.append(agent_output)
+                    
+                    # Log each agent's decision
+                    _log_agent_decision(
+                        session_id=session_id,
+                        agent_name=event_author,
+                        output=event_text.strip(),
+                        user_input=user_message
+                    )
+            
             if (
                 getattr(event, "author", "") == final_response_agent.name
                 and event.is_final_response()
@@ -671,13 +700,13 @@ def run_virtual_health_assistant(
             "session_id": session_id,
         }
         latency = (time.time() - start_time) * 1000.0
-        _log_and_persist(session_id, user_message, fallback, latency)
+        _log_and_persist(session_id, user_message, fallback, latency, agent_outputs)
         return fallback
 
     if not final_event or not final_event.content:
         fallback = {"error": "Pipeline produced no response", "session_id": session_id}
         latency = (time.time() - start_time) * 1000.0
-        _log_and_persist(session_id, user_message, fallback, latency)
+        _log_and_persist(session_id, user_message, fallback, latency, agent_outputs)
         return fallback
 
     text_parts = []
@@ -694,7 +723,7 @@ def run_virtual_health_assistant(
             meta = result_payload.setdefault("meta", {})
             meta.setdefault("latency_ms", latency)
             meta.setdefault("critic_score", None)
-            _log_and_persist(session_id, user_message, result_payload, latency)
+            _log_and_persist(session_id, user_message, result_payload, latency, agent_outputs)
             return result_payload
         except json.JSONDecodeError:
             cleaned_text = response_text.strip()
@@ -711,7 +740,7 @@ def run_virtual_health_assistant(
                     meta = parsed.setdefault("meta", {})
                     meta.setdefault("latency_ms", latency)
                     meta.setdefault("critic_score", None)
-                    _log_and_persist(session_id, user_message, parsed, latency)
+                    _log_and_persist(session_id, user_message, parsed, latency, agent_outputs)
                     return parsed
                 except json.JSONDecodeError:
                     response_text = cleaned_text
@@ -726,7 +755,7 @@ def run_virtual_health_assistant(
                     meta = parsed.setdefault("meta", {})
                     meta.setdefault("latency_ms", latency)
                     meta.setdefault("critic_score", None)
-                    _log_and_persist(session_id, user_message, parsed, latency)
+                    _log_and_persist(session_id, user_message, parsed, latency, agent_outputs)
                     return parsed
                 except json.JSONDecodeError:
                     pass
@@ -739,7 +768,7 @@ def run_virtual_health_assistant(
                 },
             }
             latency = (time.time() - start_time) * 1000.0
-            _log_and_persist(session_id, user_message, fallback, latency)
+            _log_and_persist(session_id, user_message, fallback, latency, agent_outputs)
             return fallback
 
     latency = (time.time() - start_time) * 1000.0
@@ -749,8 +778,47 @@ def run_virtual_health_assistant(
         "meta": {"latency_ms": latency, "critic_score": None},
     }
     latency = (time.time() - start_time) * 1000.0
-    _log_and_persist(session_id, user_message, fallback, latency)
+    _log_and_persist(session_id, user_message, fallback, latency, [])
     return fallback
+
+
+def _log_agent_decision(
+    session_id: str,
+    agent_name: str,
+    output: str,
+    user_input: str,
+) -> None:
+    """
+    Log each agent's decision for audit and analysis.
+    
+    Args:
+        session_id: Session identifier
+        agent_name: Name of the agent (e.g., "IntakeAgent", "ReasoningAgent")
+        output: Agent's output/decision
+        user_input: Original user input
+    """
+    if LOGGER is not None:
+        try:
+            # Parse output if it's JSON
+            parsed_output = None
+            try:
+                parsed_output = json.loads(output)
+            except json.JSONDecodeError:
+                pass
+            
+            LOGGER.log_struct(
+                {
+                    "log_type": "agent_decision",
+                    "session_id": session_id,
+                    "agent": agent_name,
+                    "user_input": user_input,
+                    "output": output,
+                    "parsed_output": parsed_output,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
+        except Exception:
+            pass
 
 
 def _log_and_persist(
@@ -758,19 +826,39 @@ def _log_and_persist(
     user_text: str,
     response_payload: Dict[str, Any],
     latency_ms: float,
+    agent_outputs: List[Dict[str, Any]] | None = None,
 ) -> None:
+    """
+    Log final response and persist to session storage.
+    
+    Args:
+        session_id: Session identifier
+        user_text: User's input message
+        response_payload: Final response payload
+        latency_ms: Request latency in milliseconds
+        agent_outputs: List of all agent outputs for this turn
+    """
     intake = response_payload.get("intake", {})
     triage_level = response_payload.get("triage_level")
+    urgency_score = response_payload.get("urgency_score")
+    critic_score = response_payload.get("meta", {}).get("critic_score")
 
+    # Log final response
     if LOGGER is not None:
         try:
             LOGGER.log_struct(
                 {
+                    "log_type": "final_response",
                     "session_id": session_id,
                     "user_input": user_text,
                     "intake": intake,
                     "triage_level": triage_level,
+                    "urgency_score": urgency_score,
+                    "critic_score": critic_score,
                     "final_response": response_payload.get("message"),
+                    "reasoning": response_payload.get("reasoning", []),
+                    "red_flags": response_payload.get("red_flags", []),
+                    "agent_outputs_count": len(agent_outputs) if agent_outputs else 0,
                     "timestamp": datetime.utcnow().isoformat(),
                     "latency_ms": latency_ms,
                 }
@@ -778,38 +866,57 @@ def _log_and_persist(
         except Exception:
             pass
 
+    # Persist to session storage
+    turn_entry = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "user_input": user_text,
+        "response": response_payload.get("message"),
+        "triage_level": triage_level,
+        "urgency_score": urgency_score,
+        "reasoning": response_payload.get("reasoning", []),
+        "red_flags": response_payload.get("red_flags", []),
+        "intake": intake,
+        "critic_score": critic_score,
+        "latency_ms": latency_ms,
+        "agent_outputs": agent_outputs or [],  # Store all agent outputs
+    }
+
     if firestore_client is not None:
         try:
-            turn_entry = {
-                "timestamp": datetime.utcnow().isoformat(),
-                "user_input": user_text,
-                "response": response_payload.get("message"),
-                "triage_level": triage_level,
-                "reasoning": response_payload.get("reasoning", []),
-            }
             session_ref = firestore_client.collection("sessions").document(
                 session_id
             )
             if FIRESTORE_SERVER_TIMESTAMP is not None and FirestoreArrayUnion is not None:
+                # Get existing session data
+                existing_doc = session_ref.get()
+                existing_data = existing_doc.to_dict() if existing_doc.exists else {}
+                
+                # Update session with new turn and agent outputs
                 session_ref.set(
                     {
                         "session_id": session_id,
                         "updated_at": FIRESTORE_SERVER_TIMESTAMP,
                         "history": FirestoreArrayUnion([turn_entry]),
+                        "agent_outputs": FirestoreArrayUnion(agent_outputs or []),
+                        "total_turns": (existing_data.get("total_turns", 0) or 0) + 1,
                     },
                     merge=True,
                 )
         except Exception:
             pass
     else:
-        LOCAL_SESSION_STORE.setdefault(session_id, []).append(
-            {
-                "timestamp": datetime.utcnow().isoformat(),
-                "user_input": user_text,
-                "response": response_payload.get("message"),
-                "triage_level": triage_level,
-                "reasoning": response_payload.get("reasoning", []),
+        # Use local session store
+        if session_id not in LOCAL_SESSION_STORE:
+            LOCAL_SESSION_STORE[session_id] = {
+                "history": [],
+                "agent_outputs": [],
+                "total_turns": 0,
             }
+        
+        LOCAL_SESSION_STORE[session_id]["history"].append(turn_entry)
+        LOCAL_SESSION_STORE[session_id]["agent_outputs"].extend(agent_outputs or [])
+        LOCAL_SESSION_STORE[session_id]["total_turns"] = (
+            LOCAL_SESSION_STORE[session_id].get("total_turns", 0) + 1
         )
 
     record_metrics(triage_level or "", latency_ms)
@@ -819,6 +926,30 @@ def _run_virtual_health_assistant_mock(
     user_message: str, session_id: str | None
 ) -> Dict[str, Any]:
     session_id = session_id or f"mock-{uuid.uuid4()}"
+    start_time = time.time()
+    
+    # Mock agent outputs for logging
+    mock_agent_outputs = [
+        {
+            "agent": "IntakeAgent",
+            "output": json.dumps({"symptom": "headache", "duration": "2 days", "severity": "mild"}),
+            "timestamp": datetime.utcnow().isoformat(),
+            "event_type": "agent_output"
+        },
+        {
+            "agent": "ReasoningAgent",
+            "output": json.dumps({"urgency": "low", "urgency_score": 3, "reasons": ["Mild symptoms"]}),
+            "timestamp": datetime.utcnow().isoformat(),
+            "event_type": "agent_output"
+        },
+        {
+            "agent": "DataAgent",
+            "output": json.dumps({"patient_id": "patient-001", "visit_notes": []}),
+            "timestamp": datetime.utcnow().isoformat(),
+            "event_type": "agent_output"
+        }
+    ]
+    
     lower_text = user_message.lower()
     for entry in MOCK_RESPONSE_MAP:
         if entry["trigger"] in lower_text:
@@ -827,6 +958,10 @@ def _run_virtual_health_assistant_mock(
             meta = response.setdefault("meta", {})
             meta.setdefault("latency_ms", 2.0)
             meta.setdefault("critic_score", 9.0)
+            
+            # Store in session memory
+            latency = (time.time() - start_time) * 1000.0
+            _log_and_persist(session_id, user_message, response, latency, mock_agent_outputs)
             return response
 
     default_response = {
@@ -852,6 +987,10 @@ def _run_virtual_health_assistant_mock(
             "latency_ms": 1.0,
         },
     }
+    
+    # Store in session memory
+    latency = (time.time() - start_time) * 1000.0
+    _log_and_persist(session_id, user_message, default_response, latency, mock_agent_outputs)
     return default_response
 
 
