@@ -22,7 +22,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List
 
-from google.adk.agents import Agent, SequentialAgent, LoopAgent
+from google.adk.agents import Agent, SequentialAgent, ParallelAgent, LoopAgent
 from google.adk.tools import FunctionTool
 from google.adk.runners import InMemoryRunner
 from google.adk.models.google_llm import Gemini
@@ -438,27 +438,58 @@ critic_agent = Agent(
         retry_options=retry_config,
     ),
     instruction="""
-You are the safety critic for a clinical triage assistant. Review the draft response {draft_response} and ensure it follows these guardrails:
-1. Safety: No definitive diagnoses or prescriptive medication dosages; escalation instructions must be present for red flags.
-2. Completeness: Message must explicitly mention the triage level and provide at least one concrete next-step action.
-3. Tone: Response must sound empathetic and patient-facing.
-4. Citations: If citations are provided, the message should reference them.
+You are the safety critic for a clinical triage assistant. Review the draft response {draft_response} and perform comprehensive safety and completeness checks.
 
-Scoring rules:
-- Start with score = 10
-- Subtract 3 points for each safety breach (diagnosis certainty, missing escalation when needed, etc.)
-- Subtract 2 points if no actionable next step is provided
-- Subtract 1 point if tone is not empathetic or patient-friendly
-Score floor is 0.
+SAFETY CHECKS (Critical - must pass):
+1. No definitive diagnoses: Check for phrases like "you have", "you are diagnosed with", "this is definitely". Must use cautious language ("might", "could", "may indicate").
+2. No medication dosages: Check for specific dosages (e.g., "take 500mg", "2 tablets"). Should only suggest consulting healthcare provider.
+3. Red flag escalation: If red_flags exist in triage, response MUST include emergency escalation instructions (call 911, go to ER).
+4. No harmful advice: No advice that could worsen condition or delay care.
+
+COMPLETENESS CHECKS (Important):
+1. Triage level mentioned: Response must explicitly state the triage level (low/medium/high urgency).
+2. Actionable next step: Must provide at least one concrete action (self-care, telehealth, urgent care, emergency).
+3. Reasoning provided: Should reference the reasoning from triage decision.
+4. Citations referenced: If citations exist, they should be mentioned in the message.
+
+TONE CHECKS:
+1. Empathetic language: Uses phrases like "I understand", "I'm here to help", acknowledges patient concern.
+2. Patient-facing: Avoids medical jargon, uses plain language.
+3. Professional: Maintains appropriate medical tone without being cold.
+
+RESPONSE RANKING:
+Rank the response quality on a scale of 0-10:
+- 10: Perfect - all safety checks pass, complete, empathetic, well-structured
+- 8-9: Good - minor improvements possible but safe and complete
+- 6-7: Acceptable - needs refinement but no safety issues
+- 4-5: Poor - missing key elements or safety concerns
+- 0-3: Unacceptable - safety breaches or critical omissions
 
 Return strict JSON with keys:
 {
-  "score": <number>,
-  "issues": ["..."],
+  "score": <number 0-10>,
+  "safety_checks": {
+    "no_diagnosis": true/false,
+    "no_dosages": true/false,
+    "red_flags_escalated": true/false,
+    "no_harmful_advice": true/false
+  },
+  "completeness_checks": {
+    "triage_mentioned": true/false,
+    "actionable_step": true/false,
+    "reasoning_included": true/false,
+    "citations_referenced": true/false
+  },
+  "tone_score": <number 0-3>,  // 3=excellent, 2=good, 1=needs improvement, 0=poor
+  "issues": ["<specific issue 1>", "<specific issue 2>", ...],
   "approved": true/false,
-  "summary": "short sentence"
+  "summary": "Brief summary of critique"
 }
-Approved must be true ONLY if score >= 8 and no safety issues remain.
+Approved must be true ONLY if:
+- score >= 8
+- All safety_checks are true
+- At least 3 of 4 completeness_checks are true
+- tone_score >= 2
 """,
     output_key="critique",
 )
@@ -473,16 +504,32 @@ refiner_agent = Agent(
     ),
     instruction="""
 You refine the patient response using the current draft {draft_response} and critique {critique}.
-Guardrails you MUST enforce in the revised JSON:
-- Maintain empathetic, concise tone.
-- Do NOT provide definitive diagnoses or medication dosages.
-- Message must explicitly mention the triage level.
-- Provide at least one actionable next step aligned with the triage level (self-care, telehealth, emergency, etc.).
-- Reference citations/sources if they exist in the draft.
-- Encourage escalation when red-flag symptoms are present.
 
-If critique.approved is true OR (critique.score >= 8 with no listed issues), call the `approve_response` tool with a brief note and return the original draft JSON unchanged.
-Otherwise, update the draft JSON (keeping the same keys: message, triage_level, reasoning, intake, patient_context, schedule, citations, meta) so that all guardrails are satisfied.
+RESPONSE RANKING AND CORRECTION LOGIC:
+1. If critique.approved is true, call `approve_response` tool and return the original draft JSON unchanged.
+2. If critique.score >= 8 AND all safety_checks pass AND at least 3 completeness_checks pass, call `approve_response` and return original.
+3. Otherwise, apply corrections based on critique.issues and critique.safety_checks/completeness_checks:
+   - Fix safety issues FIRST (highest priority)
+   - Address completeness gaps
+   - Improve tone if tone_score < 2
+
+CORRECTION PRIORITIES:
+Priority 1 (Safety - MUST fix):
+- If safety_checks.no_diagnosis is false: Remove any definitive diagnostic language, use "might", "could", "may indicate"
+- If safety_checks.no_dosages is false: Remove any medication dosages, replace with "consult your healthcare provider"
+- If safety_checks.red_flags_escalated is false AND red_flags exist: Add emergency escalation instructions (call 911, go to ER)
+- If safety_checks.no_harmful_advice is false: Remove or correct any potentially harmful advice
+
+Priority 2 (Completeness - SHOULD fix):
+- If completeness_checks.triage_mentioned is false: Explicitly state triage level in message
+- If completeness_checks.actionable_step is false: Add at least one concrete next step
+- If completeness_checks.reasoning_included is false: Reference the reasoning from triage
+- If completeness_checks.citations_referenced is false AND citations exist: Reference citations in message
+
+Priority 3 (Tone - IMPROVE if possible):
+- If tone_score < 2: Add empathetic phrases, acknowledge patient concern, use plain language
+
+Return the refined JSON with the same structure (message, triage_level, urgency_score, reasoning, red_flags, intake, patient_context, schedule, citations, meta).
 Return JSON only.
 """,
     output_key="draft_response",
@@ -514,8 +561,15 @@ Return JSON only with double quotes and no surrounding commentary.
 
 
 # ---------------------------------------------------------------------------
-# Orchestration: Intake → Data → Reasoning → Draft → Loop(Critic+Refiner) → Final
+# Orchestration: Intake → Parallel(Data + Reasoning) → Draft → Loop(Critic+Refiner) → Final
 # ---------------------------------------------------------------------------
+# Parallel execution: DataAgent and ReasoningAgent can run concurrently
+# Both depend on intake_json, so they can execute in parallel for better latency
+parallel_data_reasoning = ParallelAgent(
+    name="DataAndReasoning",
+    sub_agents=[data_agent, reasoning_agent],
+)
+
 loop_agent = LoopAgent(
     name="QualityLoop",
     sub_agents=[critic_agent, refiner_agent],
@@ -526,8 +580,7 @@ root_agent = SequentialAgent(
     name="VHA_Pipeline",
     sub_agents=[
         intake_agent,
-        data_agent,
-        reasoning_agent,
+        parallel_data_reasoning,  # Parallel execution for latency improvement
         draft_response_agent,
         loop_agent,
         final_response_agent,
